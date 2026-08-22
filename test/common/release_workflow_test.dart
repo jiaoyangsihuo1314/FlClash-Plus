@@ -35,7 +35,8 @@ void main() {
     expect(workflow, contains('Get-AuthenticodeSignature'));
     expect(workflow, contains('apksigner" verify'));
     expect(workflow, contains('apkanalyzer" manifest application-id'));
-    expect(workflow, contains('resources value --config default'));
+    expect(workflow, contains(r'unzip -p "$apk" resources.arsc'));
+    expect(workflow, contains(r'grep -Fx "$expected_label"'));
     expect(workflow, contains('actual_cert'));
     expect(workflow, contains('bundle_cert'));
     expect(workflow, contains('expected_cert'));

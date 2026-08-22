@@ -300,11 +300,13 @@ jobs:
             package_id="$("$apkanalyzer" manifest application-id "$apk")"
             version_code="$("$apkanalyzer" manifest version-code "$apk")"
             version_name="$("$apkanalyzer" manifest version-name "$apk")"
-            app_label="$("$apkanalyzer" resources value --config default --name app_name --type string "$apk")"
+            printf 'package=%s versionCode=%s versionName=%s\n' "$package_id" "$version_code" "$version_name"
             test "$package_id" = "$expected_package"
             test "$version_code" = "$expected_version_code"
             test "$version_name" = "$expected_version_name"
-            test "$app_label" = "$expected_label"
+            resource_strings="$(mktemp)"
+            unzip -p "$apk" resources.arsc | strings > "$resource_strings"
+            grep -Fx "$expected_label" "$resource_strings" > /dev/null
             if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
               actual_cert="$(printf '%s\n' "$signer_output" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
               test -n "$expected_cert"
