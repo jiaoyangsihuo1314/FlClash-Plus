@@ -304,7 +304,7 @@ jobs:
             case "$(basename "$apk")" in
               *armeabi-v7a*) expected_apk_version_code="$((expected_version_code + 1000))" ;;
               *arm64-v8a*) expected_apk_version_code="$((expected_version_code + 2000))" ;;
-              *x86_64*) expected_apk_version_code="$((expected_version_code + 3000))" ;;
+              *x86_64*) expected_apk_version_code="$((expected_version_code + 4000))" ;;
             esac
             printf 'package=%s versionCode=%s expectedVersionCode=%s versionName=%s\n' "$package_id" "$version_code" "$expected_apk_version_code" "$version_name"
             test "$package_id" = "$expected_package"

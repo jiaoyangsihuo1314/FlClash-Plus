@@ -39,7 +39,7 @@ void main() {
     expect(workflow, contains(r'grep -Fx "$expected_label"'));
     expect(workflow, contains('*armeabi-v7a*'));
     expect(workflow, contains('expected_version_code + 2000'));
-    expect(workflow, contains('expected_version_code + 3000'));
+    expect(workflow, contains('expected_version_code + 4000'));
     expect(workflow, contains('actual_cert'));
     expect(workflow, contains('bundle_cert'));
     expect(workflow, contains('expected_cert'));
