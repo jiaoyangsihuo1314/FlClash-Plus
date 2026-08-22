@@ -1,4 +1,5 @@
 import 'package:fl_clash/features/ai68/auth/ai68_session.dart';
+import 'package:fl_clash/features/ai68/storage/ai68_secure_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 abstract interface class Ai68TokenStore {
@@ -15,7 +16,7 @@ abstract interface class Ai68TokenStore {
 
 final class FlutterSecureAi68TokenStore implements Ai68TokenStore {
   FlutterSecureAi68TokenStore({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? ai68SecureStorage;
 
   static const _apiAuthorizationKey = 'ai68.api.authorization';
   static const _subscriptionTokenKey = 'ai68.subscription.token';

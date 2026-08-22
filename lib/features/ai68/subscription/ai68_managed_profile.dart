@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:fl_clash/features/ai68/api/ai68_api_exception.dart';
 import 'package:fl_clash/features/ai68/api/ai68_api_models.dart';
 import 'package:fl_clash/features/ai68/api/ai68_http_client_adapter.dart';
+import 'package:fl_clash/features/ai68/storage/ai68_secure_storage.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -44,7 +45,7 @@ abstract interface class Ai68ManagedProfileStore {
 final class FlutterSecureAi68ManagedProfileStore
     implements Ai68ManagedProfileStore {
   FlutterSecureAi68ManagedProfileStore({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? ai68SecureStorage;
 
   static const _profileIdKey = 'ai68.managed_profile.id';
 
