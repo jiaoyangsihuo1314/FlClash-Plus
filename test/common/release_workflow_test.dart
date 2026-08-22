@@ -37,6 +37,9 @@ void main() {
     expect(workflow, contains('apkanalyzer" manifest application-id'));
     expect(workflow, contains(r'unzip -p "$apk" resources.arsc'));
     expect(workflow, contains(r'grep -Fx "$expected_label"'));
+    expect(workflow, contains('*armeabi-v7a*'));
+    expect(workflow, contains('expected_version_code + 2000'));
+    expect(workflow, contains('expected_version_code + 3000'));
     expect(workflow, contains('actual_cert'));
     expect(workflow, contains('bundle_cert'));
     expect(workflow, contains('expected_cert'));

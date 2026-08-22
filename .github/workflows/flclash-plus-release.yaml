@@ -300,9 +300,15 @@ jobs:
             package_id="$("$apkanalyzer" manifest application-id "$apk")"
             version_code="$("$apkanalyzer" manifest version-code "$apk")"
             version_name="$("$apkanalyzer" manifest version-name "$apk")"
-            printf 'package=%s versionCode=%s versionName=%s\n' "$package_id" "$version_code" "$version_name"
+            expected_apk_version_code="$expected_version_code"
+            case "$(basename "$apk")" in
+              *armeabi-v7a*) expected_apk_version_code="$((expected_version_code + 1000))" ;;
+              *arm64-v8a*) expected_apk_version_code="$((expected_version_code + 2000))" ;;
+              *x86_64*) expected_apk_version_code="$((expected_version_code + 3000))" ;;
+            esac
+            printf 'package=%s versionCode=%s expectedVersionCode=%s versionName=%s\n' "$package_id" "$version_code" "$expected_apk_version_code" "$version_name"
             test "$package_id" = "$expected_package"
-            test "$version_code" = "$expected_version_code"
+            test "$version_code" = "$expected_apk_version_code"
             test "$version_name" = "$expected_version_name"
             resource_strings="$(mktemp)"
             unzip -p "$apk" resources.arsc | strings > "$resource_strings"
