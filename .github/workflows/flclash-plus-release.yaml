@@ -22,6 +22,14 @@ on:
         required: true
         default: true
         type: boolean
+      android_package_mode:
+        description: Android package identity and signing mode
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - test
       build_windows:
         description: Build Windows packages
         required: true
@@ -49,6 +57,7 @@ env:
   GO_VERSION: '1.26.5'
   FLCLASH_PLUS_RELEASE_REPOSITORY: ${{ github.repository }}
   AI68_PAYMENT_HOSTS: ${{ vars.AI68_PAYMENT_HOSTS }}
+  ANDROID_PACKAGE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.android_package_mode || 'production' }}
 
 jobs:
   validate:
@@ -205,7 +214,7 @@ jobs:
           STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD || secrets.STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
           SERVICE_JSON_BASE64: ${{ secrets.ANDROID_SERVICE_JSON_BASE64 || secrets.SERVICE_JSON }}
-          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/plus-v') }}
+          SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
           signing_values=0
@@ -214,32 +223,36 @@ jobs:
               signing_values=$((signing_values + 1))
             fi
           done
-          if [[ "$signing_values" -eq 4 ]]; then
+          if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
+            if [[ "$signing_values" -ne 4 ]]; then
+              echo 'Production Android packages require all Android signing secrets.' >&2
+              exit 1
+            fi
+            if [[ -z "$SIGNING_CERT_SHA256" ]]; then
+              echo 'Production Android packages require ANDROID_SIGNING_CERT_SHA256.' >&2
+              exit 1
+            fi
+            if [[ -z "$SERVICE_JSON_BASE64" ]]; then
+              echo 'Production Android packages require ANDROID_SERVICE_JSON_BASE64.' >&2
+              exit 1
+            fi
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
             {
               printf 'keyAlias=%s\n' "$KEY_ALIAS"
               printf 'storePassword=%s\n' "$STORE_PASSWORD"
               printf 'keyPassword=%s\n' "$KEY_PASSWORD"
             } >> android/local.properties
-            echo 'ANDROID_SIGNING_MODE=release' >> "$GITHUB_ENV"
-          elif [[ "$signing_values" -eq 0 ]]; then
-            if [[ "$IS_TAG_RELEASE" == 'true' ]]; then
-              echo 'Tagged releases require all Android signing secrets.' >&2
-              exit 1
-            fi
-            echo 'ANDROID_SIGNING_MODE=test' >> "$GITHUB_ENV"
-          else
+          elif [[ "$signing_values" -ne 0 && "$signing_values" -ne 4 ]]; then
             echo 'Android signing secrets must be supplied together.' >&2
             exit 1
           fi
-          if [[ -z "$SERVICE_JSON_BASE64" ]]; then
-            if [[ "$IS_TAG_RELEASE" == 'true' ]]; then
-              echo 'Tagged releases require ANDROID_SERVICE_JSON_BASE64.' >&2
-              exit 1
-            fi
-          else
+          if [[ -n "$SERVICE_JSON_BASE64" ]]; then
             printf '%s' "$SERVICE_JSON_BASE64" | base64 --decode > android/app/google-services.json
-            jq -e --arg package 'cn.ai68.flclashplus' \
+            expected_package='cn.ai68.flclashplus'
+            if [[ "$ANDROID_PACKAGE_MODE" == 'test' ]]; then
+              expected_package='cn.ai68.flclashplus.dev'
+            fi
+            jq -e --arg package "$expected_package" \
               '.client | any(.client_info.android_client_info.package_name == $package)' \
               android/app/google-services.json > /dev/null
             jq -e '.project_info.project_number != "000000000000" and .project_info.project_id != "dev"' \
@@ -250,13 +263,15 @@ jobs:
         run: flutter pub get
 
       - name: Build release APKs
-        run: dart setup.dart android --env "${{ env.APP_ENV }}" --targets apk -v
+        run: dart setup.dart android --env "${{ env.APP_ENV }}" --android-package-mode "$ANDROID_PACKAGE_MODE" --targets apk -v
 
       - name: Build release app bundle
-        run: dart setup.dart android --env "${{ env.APP_ENV }}" --targets aab -v
+        run: dart setup.dart android --env "${{ env.APP_ENV }}" --android-package-mode "$ANDROID_PACKAGE_MODE" --targets aab -v
 
       - name: Verify Android artifacts
         shell: bash
+        env:
+          SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
           mapfile -t apks < <(find dist -maxdepth 1 -type f -name '*.apk' -print)
@@ -264,26 +279,60 @@ jobs:
           test "${#apks[@]}" -gt 0
           test "${#bundles[@]}" -gt 0
           apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -n 1)"
           test -x "$apksigner"
+          test -x "$aapt"
+          package_version="$(awk '$1 == "version:" { print $2; exit }' pubspec.yaml)"
+          expected_version_name="${package_version%%+*}"
+          expected_version_code="${package_version#*+}"
+          expected_package='cn.ai68.flclashplus'
+          expected_label='FlClash Plus'
+          if [[ "$ANDROID_PACKAGE_MODE" == 'test' ]]; then
+            expected_package='cn.ai68.flclashplus.dev'
+            expected_label='FlClash Plus Test'
+          fi
+          expected_cert="$(printf '%s' "$SIGNING_CERT_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
+          expected_build_sha="${GITHUB_SHA:0:8}"
           for apk in "${apks[@]}"; do
             printf '%s\n' "$apk"
-            "$apksigner" verify --verbose --print-certs "$apk"
+            signer_output="$("$apksigner" verify --verbose --print-certs "$apk")"
+            printf '%s\n' "$signer_output"
+            badging="$("$aapt" dump badging "$apk")"
+            package_id="$(printf '%s\n' "$badging" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
+            version_code="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" | head -n 1)"
+            version_name="$(printf '%s\n' "$badging" | sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" | head -n 1)"
+            app_label="$(printf '%s\n' "$badging" | sed -n "s/^application-label:'\([^']*\)'.*/\1/p" | head -n 1)"
+            test "$package_id" = "$expected_package"
+            test "$version_code" = "$expected_version_code"
+            test "$version_name" = "$expected_version_name"
+            test "$app_label" = "$expected_label"
+            if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
+              actual_cert="$(printf '%s\n' "$signer_output" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
+              test -n "$expected_cert"
+              test "$actual_cert" = "$expected_cert"
+              [[ "$(basename "$apk")" != *-test-* ]]
+            else
+              [[ "$(basename "$apk")" == *-test-* ]]
+            fi
+            app_library="$(unzip -Z1 "$apk" | awk '/^lib\/[^/]+\/libapp\.so$/ && !found { print; found=1 }')"
+            test -n "$app_library"
+            app_strings="$(mktemp)"
+            unzip -p "$apk" "$app_library" | strings > "$app_strings"
+            grep -F 'Welcome to FlClash Plus' "$app_strings" > /dev/null
+            grep -F 'passport/auth/login' "$app_strings" > /dev/null
+            grep -F "$expected_build_sha" "$app_strings" > /dev/null
           done
           for bundle in "${bundles[@]}"; do
             printf '%s\n' "$bundle"
-            jarsigner -verify "$bundle"
+            jarsigner -verify -strict "$bundle"
+            if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
+              bundle_cert="$(keytool -printcert -jarfile "$bundle" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
+              test "$bundle_cert" = "$expected_cert"
+              [[ "$(basename "$bundle")" != *-test-* ]]
+            else
+              [[ "$(basename "$bundle")" == *-test-* ]]
+            fi
           done
-          if [[ "$ANDROID_SIGNING_MODE" == 'release' ]]; then
-            apkanalyzer="$(find "$ANDROID_HOME/cmdline-tools" -type f -name apkanalyzer -print | head -n 1)"
-            test -x "$apkanalyzer"
-            for apk in "${apks[@]}"; do
-              package_id="$("$apkanalyzer" manifest application-id "$apk")"
-              if [[ "$package_id" != 'cn.ai68.flclashplus' ]]; then
-                echo "Unexpected Android application id: $package_id" >&2
-                exit 1
-              fi
-            done
-          fi
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

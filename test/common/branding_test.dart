@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('uses the commercial brand without renaming native protocols', () {
     expect(appName, 'FlClash Plus');
+    expect(buildSha, 'unknown');
+    expect(androidPackageMode, 'unknown');
     expect(packageName, 'com.follow.clash');
     expect(appHelperService, 'FlClashPlusHelperService');
     expect(helperPort, 47891);
@@ -44,6 +46,16 @@ void main() {
 
     expect(androidBuild, contains('applicationId = "cn.ai68.flclashplus"'));
     expect(androidBuild, contains('namespace = "com.follow.clash"'));
+    expect(androidBuild, contains('FLCLASH_ANDROID_PACKAGE_MODE'));
+    expect(androidBuild, contains('resValues = true'));
+    expect(
+      androidBuild,
+      contains('Production Android packages require the release keystore'),
+    );
+    expect(
+      androidBuild,
+      contains('resValue("string", "app_name", "FlClash Plus Test")'),
+    );
     expect(androidManifest, contains('android:allowBackup="false"'));
     expect(androidManifest, contains('android:scheme="flclash"'));
     expect(androidManifest, contains('android:scheme="flclashplus"'));
@@ -69,5 +81,15 @@ void main() {
     );
     expect(innoSetup, contains('{app}\\\\FlClashPlusHelperService.exe'));
     expect(innoSetup, isNot(contains("'FlClashCore.exe'")));
+  });
+
+  test('commercial startup and navigation stay wired into the application', () {
+    final application = File('lib/application.dart').readAsStringSync();
+    final navigation = File('lib/common/navigation.dart').readAsStringSync();
+
+    expect(application, contains('ai68CommercialProvider.notifier).bootstrap'));
+    expect(application, contains('const Ai68EntryGate(child: HomePage())'));
+    expect(navigation, contains('label: PageLabel.ai68Center'));
+    expect(navigation, contains('const Ai68CenterView'));
   });
 }

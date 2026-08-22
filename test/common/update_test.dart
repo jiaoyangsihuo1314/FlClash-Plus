@@ -25,7 +25,7 @@ void main() {
         'tag_name': 'plus-v1.2.0',
         'html_url': 'https://github.com/ai68/flclash-plus/releases/tag/1.2.0',
       },
-    ], currentVersion: '1.0.0+2026082201');
+    ], currentVersion: '1.0.0+2026082202');
 
     expect(release?['tag_name'], 'plus-v1.2.0');
   });
@@ -36,7 +36,7 @@ void main() {
       <String, dynamic>{'tag_name': 'plus-v1.0.0'},
       <String, dynamic>{'tag_name': 'plus-v1.1.0', 'draft': true},
       <String, dynamic>{'tag_name': 123},
-    ], currentVersion: '1.0.0+2026082201');
+    ], currentVersion: '1.0.0+2026082202');
 
     expect(release, isNull);
   });

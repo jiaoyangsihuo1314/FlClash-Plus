@@ -10,7 +10,15 @@ void main() {
   test('tagged releases fail closed and verify all platform trust chains', () {
     expect(
       workflow,
-      contains('Tagged releases require all Android signing secrets.'),
+      contains(
+        'Production Android packages require all Android signing secrets.',
+      ),
+    );
+    expect(
+      workflow,
+      contains(
+        'Production Android packages require ANDROID_SIGNING_CERT_SHA256.',
+      ),
     );
     expect(
       workflow,
@@ -26,6 +34,10 @@ void main() {
     expect(workflow, contains('stapler validate'));
     expect(workflow, contains('Get-AuthenticodeSignature'));
     expect(workflow, contains('apksigner" verify'));
+    expect(workflow, contains('actual_cert'));
+    expect(workflow, contains('bundle_cert'));
+    expect(workflow, contains('expected_cert'));
+    expect(workflow, contains('jarsigner -verify -strict'));
   });
 
   test('Windows signing preserves the Mihomo Core integrity contract', () {
@@ -65,5 +77,24 @@ void main() {
         'AI68_PAYMENT_HOSTS must list the production payment domains for tagged releases.',
       ),
     );
+  });
+
+  test('Android package mode and artifact identity are explicit', () {
+    expect(workflow, contains('android_package_mode:'));
+    expect(workflow, contains('default: production'));
+    expect(
+      workflow,
+      contains(r'--android-package-mode "$ANDROID_PACKAGE_MODE"'),
+    );
+    expect(workflow, contains("expected_package='cn.ai68.flclashplus'"));
+    expect(workflow, contains("expected_package='cn.ai68.flclashplus.dev'"));
+    expect(workflow, contains("expected_label='FlClash Plus Test'"));
+    expect(workflow, contains(r'[[ "$(basename "$apk")" == *-test-* ]]'));
+  });
+
+  test('Android artifacts prove the commercial build is packaged', () {
+    expect(workflow, contains("grep -F 'Welcome to FlClash Plus'"));
+    expect(workflow, contains("grep -F 'passport/auth/login'"));
+    expect(workflow, contains(r'grep -F "$expected_build_sha"'));
   });
 }

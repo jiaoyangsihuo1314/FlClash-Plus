@@ -19,6 +19,7 @@ const _androidFlutterTarget = {
 
 const flutterDistributorGitRef = 'd61d99fb245c72f4678609ccbff1766827fcf718';
 const appdmgVersion = '0.6.6';
+const androidPackageModes = ['production', 'test'];
 
 const _hostPlatform = {
   'linux': 'linux',
@@ -59,6 +60,7 @@ Future<void> main(List<String> args) async {
   final arch = _detectArch();
   final targets = _getTargets(platform, arch, results['targets']);
   final androidArch = results['arch'] as String?;
+  final androidPackageMode = results['android-package-mode'] as String;
   final verbose = results['verbose'] as bool;
 
   final exitCode = await _package(
@@ -68,6 +70,7 @@ Future<void> main(List<String> args) async {
     rootDir,
     arch,
     androidArch: androidArch,
+    androidPackageMode: androidPackageMode,
     verbose: verbose,
   );
   exit(exitCode);
@@ -91,6 +94,12 @@ ArgParser createSetupArgParser() {
       valueHelp: 'arm,arm64,amd64',
       allowed: ['arm', 'arm64', 'amd64'],
       help: 'Target architecture (Android only)',
+    )
+    ..addOption(
+      'android-package-mode',
+      defaultsTo: 'test',
+      allowed: androidPackageModes,
+      help: 'Android package identity and signing mode',
     )
     ..addFlag(
       'verbose',
@@ -120,6 +129,8 @@ Map<String, String> createBuildEnvironment(
   String? releaseRepository,
   String? paymentHosts,
   String? macOsTestStorage,
+  String? buildSha,
+  String? androidPackageMode,
 }) {
   return {
     'APP_ENV': env,
@@ -129,7 +140,18 @@ Map<String, String> createBuildEnvironment(
       'AI68_PAYMENT_HOSTS': paymentHosts,
     if (macOsTestStorage != null && macOsTestStorage.isNotEmpty)
       'AI68_MACOS_TEST_STORAGE': macOsTestStorage,
+    if (buildSha != null && buildSha.isNotEmpty)
+      'FLCLASH_PLUS_BUILD_SHA': buildSha,
+    if (androidPackageMode != null && androidPackageMode.isNotEmpty)
+      'FLCLASH_ANDROID_PACKAGE_MODE': androidPackageMode,
   };
+}
+
+String androidTestArtifactName(String name) {
+  if (name.contains('-test-')) return name;
+  final match = RegExp(r'^(.*)(-android[^.]*\.(?:apk|aab))$').firstMatch(name);
+  if (match == null) return name;
+  return '${match.group(1)}-test${match.group(2)}';
 }
 
 String _getTargets(String platform, String arch, String? customTargets) {
@@ -155,8 +177,10 @@ Future<int> _package(
   String rootDir,
   String arch, {
   String? androidArch,
+  required String androidPackageMode,
   required bool verbose,
 }) async {
+  final buildSha = _resolveBuildSha(rootDir);
   final file = File(p.join(rootDir, 'env.json'));
   await file.writeAsString(
     jsonEncode(
@@ -166,6 +190,8 @@ Future<int> _package(
             Platform.environment['FLCLASH_PLUS_RELEASE_REPOSITORY'],
         paymentHosts: Platform.environment['AI68_PAYMENT_HOSTS'],
         macOsTestStorage: Platform.environment['AI68_MACOS_TEST_STORAGE'],
+        buildSha: buildSha,
+        androidPackageMode: platform == 'android' ? androidPackageMode : null,
       ),
     ),
   );
@@ -200,6 +226,10 @@ Future<int> _package(
     return activateResult.exitCode;
   }
 
+  final androidArtifactsBefore = platform == 'android'
+      ? _androidArtifactState(rootDir)
+      : const <String, String>{};
+
   final process = await Process.start(
     'flutter_distributor',
     [
@@ -216,7 +246,11 @@ Future<int> _package(
       ...descriptionArgs,
     ],
     includeParentEnvironment: true,
-    environment: {'ANDROID_ARCH': ?androidArch},
+    environment: {
+      'ANDROID_ARCH': ?androidArch,
+      if (platform == 'android')
+        'FLCLASH_ANDROID_PACKAGE_MODE': androidPackageMode,
+    },
     runInShell: Platform.isWindows,
   );
 
@@ -227,7 +261,43 @@ Future<int> _package(
     stderr.write(utf8.decode(data));
   });
   final exitCode = await process.exitCode;
+  if (exitCode == 0 && platform == 'android' && androidPackageMode == 'test') {
+    _renameAndroidTestArtifacts(rootDir, androidArtifactsBefore);
+  }
   return exitCode;
+}
+
+String _resolveBuildSha(String rootDir) {
+  final githubSha = Platform.environment['GITHUB_SHA']?.trim();
+  if (githubSha != null && githubSha.isNotEmpty) return githubSha;
+  final result = Process.runSync('git', [
+    'rev-parse',
+    'HEAD',
+  ], workingDirectory: rootDir);
+  if (result.exitCode != 0) return 'unknown';
+  final sha = (result.stdout as String).trim();
+  return sha.isEmpty ? 'unknown' : sha;
+}
+
+Map<String, String> _androidArtifactState(String rootDir) {
+  final dist = Directory(p.join(rootDir, 'dist'));
+  if (!dist.existsSync()) return const {};
+  return {
+    for (final entity in dist.listSync().whereType<File>())
+      if (entity.path.endsWith('.apk') || entity.path.endsWith('.aab'))
+        entity.path: '${entity.lengthSync()}:${entity.lastModifiedSync()}',
+  };
+}
+
+void _renameAndroidTestArtifacts(String rootDir, Map<String, String> before) {
+  final current = _androidArtifactState(rootDir);
+  for (final entry in current.entries) {
+    if (before[entry.key] == entry.value) continue;
+    final source = File(entry.key);
+    final renamed = androidTestArtifactName(p.basename(source.path));
+    if (renamed == p.basename(source.path)) continue;
+    source.renameSync(p.join(p.dirname(source.path), renamed));
+  }
 }
 
 String _detectArch() {

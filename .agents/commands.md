@@ -17,6 +17,19 @@ dart setup.dart windows
 dart setup.dart android
 ```
 
+Android packaging defaults to a separately installable test package. Select the
+package identity explicitly for release work:
+
+```bash
+dart setup.dart android --android-package-mode test
+dart setup.dart android --android-package-mode production
+```
+
+Test packages use `cn.ai68.flclashplus.dev`, show `FlClash Plus Test`, and add
+`-test-` to artifact filenames. Production packages use
+`cn.ai68.flclashplus` and require the release keystore plus all signing
+credentials.
+
 Build only the Go core and skip Flutter packaging:
 
 ```bash

@@ -113,6 +113,14 @@ class AboutView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appLocalizations = context.appLocalizations;
+    final shortBuildSha = buildSha.length > 8
+        ? buildSha.substring(0, 8)
+        : buildSha;
+    final buildDetails = [
+      if (buildSha != 'unknown') shortBuildSha,
+      if (system.isAndroid && androidPackageMode != 'unknown')
+        androidPackageMode,
+    ];
     final items = [
       ListTile(
         title: Column(
@@ -141,9 +149,15 @@ class AboutView extends StatelessWidget {
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Text(
-                            globalState.packageInfo.version,
+                            '${globalState.packageInfo.version}+'
+                            '${globalState.packageInfo.buildNumber}',
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
+                          if (buildDetails.isNotEmpty)
+                            Text(
+                              buildDetails.join(' | '),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                         ],
                       ),
                     ],

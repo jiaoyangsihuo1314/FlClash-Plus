@@ -23,6 +23,11 @@ val hasReleaseSigning = releaseStoreFile.exists() &&
     releaseStorePassword != null &&
     releaseKeyAlias != null &&
     releaseKeyPassword != null
+val androidPackageMode = System.getenv("FLCLASH_ANDROID_PACKAGE_MODE") ?: "test"
+
+if (androidPackageMode !in setOf("production", "test")) {
+    throw GradleException("Unsupported Android package mode: $androidPackageMode")
+}
 
 android {
     namespace = "com.follow.clash"
@@ -59,20 +64,31 @@ android {
         }
     }
 
+    buildFeatures {
+        resValues = true
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "FlClash Plus Debug")
         }
 
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            if (hasReleaseSigning) {
+            if (androidPackageMode == "production") {
+                if (!hasReleaseSigning) {
+                    throw GradleException(
+                        "Production Android packages require the release keystore and credentials",
+                    )
+                }
                 signingConfig = signingConfigs.getByName("release")
             } else {
                 signingConfig = signingConfigs.getByName("debug")
                 applicationIdSuffix = ".dev"
+                resValue("string", "app_name", "FlClash Plus Test")
             }
 
             proguardFiles(

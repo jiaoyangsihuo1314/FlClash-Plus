@@ -29,6 +29,22 @@ void main() {
       expect(results['env'], 'dev');
     });
 
+    test('defaults Android packages to test mode', () {
+      final results = setup.createSetupArgParser().parse(['android']);
+
+      expect(results['android-package-mode'], 'test');
+    });
+
+    test('accepts production Android package mode', () {
+      final results = setup.createSetupArgParser().parse([
+        'android',
+        '--android-package-mode',
+        'production',
+      ]);
+
+      expect(results['android-package-mode'], 'production');
+    });
+
     test('Flutter build environment does not depend on Core SHA256', () {
       expect(setup.createBuildEnvironment('dev'), {'APP_ENV': 'dev'});
     });
@@ -45,6 +61,40 @@ void main() {
           'FLCLASH_PLUS_RELEASE_REPOSITORY': 'ai68/flclash-plus',
           'AI68_PAYMENT_HOSTS': 'stripe.com,paypal.com',
         },
+      );
+    });
+
+    test('includes Android build identity when supplied', () {
+      expect(
+        setup.createBuildEnvironment(
+          'stable',
+          buildSha: '0123456789abcdef',
+          androidPackageMode: 'production',
+        ),
+        {
+          'APP_ENV': 'stable',
+          'FLCLASH_PLUS_BUILD_SHA': '0123456789abcdef',
+          'FLCLASH_ANDROID_PACKAGE_MODE': 'production',
+        },
+      );
+    });
+
+    test('marks Android test artifacts without changing marked names', () {
+      expect(
+        setup.androidTestArtifactName(
+          'FlClashPlus-1.0.0-android-arm64-v8a.apk',
+        ),
+        'FlClashPlus-1.0.0-test-android-arm64-v8a.apk',
+      );
+      expect(
+        setup.androidTestArtifactName('FlClashPlus-1.0.0-android.aab'),
+        'FlClashPlus-1.0.0-test-android.aab',
+      );
+      expect(
+        setup.androidTestArtifactName(
+          'FlClashPlus-1.0.0-test-android-arm64-v8a.apk',
+        ),
+        'FlClashPlus-1.0.0-test-android-arm64-v8a.apk',
       );
     });
 

@@ -10,6 +10,14 @@ import 'package:fl_clash/models/models.dart';
 import 'package:flutter/material.dart';
 
 const appName = 'FlClash Plus';
+const buildSha = String.fromEnvironment(
+  'FLCLASH_PLUS_BUILD_SHA',
+  defaultValue: 'unknown',
+);
+const androidPackageMode = String.fromEnvironment(
+  'FLCLASH_ANDROID_PACKAGE_MODE',
+  defaultValue: 'unknown',
+);
 const appHelperService = 'FlClashPlusHelperService';
 const coreManifestName = 'manifest.json';
 const coreName = 'clash.meta';
