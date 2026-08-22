@@ -44,6 +44,7 @@ void main() {
     expect(workflow, contains('bundle_cert'));
     expect(workflow, contains('expected_cert'));
     expect(workflow, contains('jarsigner -verify -strict'));
+    expect(workflow, contains(r'jarsigner -verify "$bundle"'));
   });
 
   test('Windows signing preserves the Mihomo Core integrity contract', () {
