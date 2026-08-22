@@ -1,6 +1,7 @@
 import 'package:fl_clash/features/ai68/auth/ai68_session.dart';
 import 'package:fl_clash/features/ai68/storage/ai68_secure_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract interface class Ai68TokenStore {
   Future<String?> readApiAuthorization();
@@ -89,5 +90,72 @@ final class FlutterSecureAi68TokenStore implements Ai68TokenStore {
     if (firstError != null) {
       Error.throwWithStackTrace(firstError, firstStackTrace!);
     }
+  }
+}
+
+final class SharedPreferencesAi68TokenStore implements Ai68TokenStore {
+  static const _apiAuthorizationKey = 'ai68.test.api.authorization';
+  static const _subscriptionTokenKey = 'ai68.test.subscription.token';
+  static const _isAdminKey = 'ai68.test.session.is_admin';
+
+  Future<SharedPreferences> get _preferences {
+    return SharedPreferences.getInstance();
+  }
+
+  @override
+  Future<String?> readApiAuthorization() async {
+    return (await _preferences).getString(_apiAuthorizationKey);
+  }
+
+  @override
+  Future<String?> readSubscriptionToken() async {
+    return (await _preferences).getString(_subscriptionTokenKey);
+  }
+
+  @override
+  Future<Ai68Session?> readSession() async {
+    final preferences = await _preferences;
+    final apiAuthorization = preferences.getString(_apiAuthorizationKey);
+    final subscriptionToken = preferences.getString(_subscriptionTokenKey);
+    if (apiAuthorization == null || subscriptionToken == null) {
+      if (apiAuthorization != null || subscriptionToken != null) {
+        await clear();
+      }
+      return null;
+    }
+    return Ai68Session(
+      apiAuthorization: apiAuthorization,
+      subscriptionToken: subscriptionToken,
+      isAdmin: preferences.getBool(_isAdminKey) ?? false,
+    );
+  }
+
+  @override
+  Future<void> writeSession(Ai68Session session) async {
+    final preferences = await _preferences;
+    try {
+      await preferences.setString(
+        _apiAuthorizationKey,
+        session.apiAuthorization,
+      );
+      await preferences.setString(
+        _subscriptionTokenKey,
+        session.subscriptionToken,
+      );
+      await preferences.setBool(_isAdminKey, session.isAdmin);
+    } catch (_) {
+      await clear();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> clear() async {
+    final preferences = await _preferences;
+    await Future.wait([
+      preferences.remove(_apiAuthorizationKey),
+      preferences.remove(_subscriptionTokenKey),
+      preferences.remove(_isAdminKey),
+    ]);
   }
 }

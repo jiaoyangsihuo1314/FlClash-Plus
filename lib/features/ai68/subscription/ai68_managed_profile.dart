@@ -8,12 +8,16 @@ import 'package:fl_clash/features/ai68/storage/ai68_secure_storage.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const ai68MaximumSubscriptionBytes = 16 * 1024 * 1024;
 
 final ai68ManagedProfileStoreProvider = Provider<Ai68ManagedProfileStore>((
   ref,
 ) {
+  if (useAi68MacOsTestStorage) {
+    return SharedPreferencesAi68ManagedProfileStore();
+  }
   return FlutterSecureAi68ManagedProfileStore();
 });
 
@@ -65,6 +69,30 @@ final class FlutterSecureAi68ManagedProfileStore
   @override
   Future<void> writeProfileId(int profileId) {
     return _storage.write(key: _profileIdKey, value: profileId.toString());
+  }
+}
+
+final class SharedPreferencesAi68ManagedProfileStore
+    implements Ai68ManagedProfileStore {
+  static const _profileIdKey = 'ai68.test.managed_profile.id';
+
+  Future<SharedPreferences> get _preferences {
+    return SharedPreferences.getInstance();
+  }
+
+  @override
+  Future<void> clear() async {
+    await (await _preferences).remove(_profileIdKey);
+  }
+
+  @override
+  Future<int?> readProfileId() async {
+    return (await _preferences).getInt(_profileIdKey);
+  }
+
+  @override
+  Future<void> writeProfileId(int profileId) async {
+    await (await _preferences).setInt(_profileIdKey, profileId);
   }
 }
 

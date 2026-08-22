@@ -565,7 +565,15 @@ jobs:
         run: flutter pub get
 
       - name: Build application and DMG
-        run: dart setup.dart macos --env "${{ env.APP_ENV }}" --targets dmg -v
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$MACOS_SIGNING_MODE" == 'test' ]]; then
+            export AI68_MACOS_TEST_STORAGE=true
+          else
+            export AI68_MACOS_TEST_STORAGE=false
+          fi
+          dart setup.dart macos --env "${{ env.APP_ENV }}" --targets dmg -v
 
       - name: Sign, notarize, and archive macOS application
         shell: bash

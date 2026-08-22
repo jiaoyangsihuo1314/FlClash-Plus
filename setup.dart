@@ -119,6 +119,7 @@ Map<String, String> createBuildEnvironment(
   String env, {
   String? releaseRepository,
   String? paymentHosts,
+  String? macOsTestStorage,
 }) {
   return {
     'APP_ENV': env,
@@ -126,6 +127,8 @@ Map<String, String> createBuildEnvironment(
       'FLCLASH_PLUS_RELEASE_REPOSITORY': releaseRepository,
     if (paymentHosts != null && paymentHosts.isNotEmpty)
       'AI68_PAYMENT_HOSTS': paymentHosts,
+    if (macOsTestStorage != null && macOsTestStorage.isNotEmpty)
+      'AI68_MACOS_TEST_STORAGE': macOsTestStorage,
   };
 }
 
@@ -162,6 +165,7 @@ Future<int> _package(
         releaseRepository:
             Platform.environment['FLCLASH_PLUS_RELEASE_REPOSITORY'],
         paymentHosts: Platform.environment['AI68_PAYMENT_HOSTS'],
+        macOsTestStorage: Platform.environment['AI68_MACOS_TEST_STORAGE'],
       ),
     ),
   );
