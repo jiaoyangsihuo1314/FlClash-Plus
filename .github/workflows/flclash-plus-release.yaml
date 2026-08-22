@@ -17,6 +17,21 @@ on:
         required: true
         default: false
         type: boolean
+      build_android:
+        description: Build Android packages
+        required: true
+        default: true
+        type: boolean
+      build_windows:
+        description: Build Windows packages
+        required: true
+        default: true
+        type: boolean
+      build_macos:
+        description: Build macOS packages
+        required: true
+        default: true
+        type: boolean
   push:
     tags:
       - 'plus-v*'
@@ -147,6 +162,7 @@ jobs:
   android:
     name: Android APK and AAB
     needs: validate
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_android }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -282,6 +298,7 @@ jobs:
   windows:
     name: Windows x64
     needs: validate
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_windows }}
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -452,7 +469,7 @@ jobs:
             foreach ($file in $signedFiles) {
               $signature = Get-AuthenticodeSignature $file
               if ($signature.Status -ne 'Valid') {
-                throw "Invalid Authenticode signature for $file: $($signature.Status)"
+                throw "Invalid Authenticode signature for ${file}: $($signature.Status)"
               }
             }
           }
@@ -470,6 +487,7 @@ jobs:
   macos:
     name: macOS ${{ matrix.arch }}
     needs: validate
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_macos }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
