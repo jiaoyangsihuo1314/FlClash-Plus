@@ -9,8 +9,8 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter/material.dart';
 
-const appName = 'FlClash';
-const appHelperService = 'FlClashHelperService';
+const appName = 'FlClash Plus';
+const appHelperService = 'FlClashPlusHelperService';
 const coreManifestName = 'manifest.json';
 const coreName = 'clash.meta';
 const browserUa =
@@ -18,7 +18,7 @@ const browserUa =
 const packageName = 'com.follow.clash';
 final unixSocketPath = '/tmp/FlClashSocket_${Random().nextInt(10000)}.sock';
 final windowsPipeName = '\\\\.\\pipe\\FlClashCore_${_randomPipeId()}';
-const helperPort = 47890;
+const helperPort = 47891;
 const helperProtocolVersionHeader = 'x-flclash-helper-protocol';
 const helperProtocolVersion = '6';
 const maxTextScale = 1.4;
@@ -72,7 +72,11 @@ const localhost = '127.0.0.1';
 const clashConfigKey = 'clash_config';
 const configKey = 'config';
 const double dialogCommonWidth = 300;
-const repository = 'chen08209/FlClash';
+const ai68Website = 'https://mingjie-panel.ai68ai.cn';
+const upstreamRepository = 'chen08209/FlClash';
+const releaseRepository = String.fromEnvironment(
+  'FLCLASH_PLUS_RELEASE_REPOSITORY',
+);
 const defaultExternalController = '127.0.0.1:9090';
 const maxMobileWidth = 600;
 const maxLaptopWidth = 840;

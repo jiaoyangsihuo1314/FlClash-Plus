@@ -17,6 +17,9 @@ const _androidFlutterTarget = {
   'amd64': 'android-x64',
 };
 
+const flutterDistributorGitRef = 'd61d99fb245c72f4678609ccbff1766827fcf718';
+const appdmgVersion = '0.6.6';
+
 const _hostPlatform = {
   'linux': 'linux',
   'macos': 'macos',
@@ -99,20 +102,31 @@ ArgParser createSetupArgParser() {
 
 List<String> createFlutterBuildArgs({
   required String platform,
+  required String targets,
   required bool verbose,
 }) {
   final flutterBuildArgs = <String>[
     if (verbose) 'verbose',
     'dart-define-from-file=env.json',
   ];
-  if (platform == 'android') {
+  if (platform == 'android' && targets == 'apk') {
     flutterBuildArgs.add('split-per-abi');
   }
   return flutterBuildArgs;
 }
 
-Map<String, String> createBuildEnvironment(String env) {
-  return {'APP_ENV': env};
+Map<String, String> createBuildEnvironment(
+  String env, {
+  String? releaseRepository,
+  String? paymentHosts,
+}) {
+  return {
+    'APP_ENV': env,
+    if (releaseRepository != null && releaseRepository.isNotEmpty)
+      'FLCLASH_PLUS_RELEASE_REPOSITORY': releaseRepository,
+    if (paymentHosts != null && paymentHosts.isNotEmpty)
+      'AI68_PAYMENT_HOSTS': paymentHosts,
+  };
 }
 
 String _getTargets(String platform, String arch, String? customTargets) {
@@ -141,10 +155,20 @@ Future<int> _package(
   required bool verbose,
 }) async {
   final file = File(p.join(rootDir, 'env.json'));
-  await file.writeAsString(jsonEncode(createBuildEnvironment(env)));
+  await file.writeAsString(
+    jsonEncode(
+      createBuildEnvironment(
+        env,
+        releaseRepository:
+            Platform.environment['FLCLASH_PLUS_RELEASE_REPOSITORY'],
+        paymentHosts: Platform.environment['AI68_PAYMENT_HOSTS'],
+      ),
+    ),
+  );
 
   final flutterBuildArgs = createFlutterBuildArgs(
     platform: platform,
+    targets: targets,
     verbose: verbose,
   );
   final descriptionArgs = <String>[];
@@ -163,7 +187,7 @@ Future<int> _package(
     'git',
     'https://github.com/chen08209/flutter_distributor.git',
     '--git-ref',
-    'FlClash',
+    flutterDistributorGitRef,
     '--git-path',
     'packages/flutter_distributor',
   ]);
@@ -238,7 +262,11 @@ Future<int> _ensureMacosDependencies() async {
     return 0;
   }
   stdout.writeln('Installing appdmg (DMG creator)...');
-  final result = await Process.run('npm', ['install', '-g', 'appdmg']);
+  final result = await Process.run('npm', [
+    'install',
+    '-g',
+    'appdmg@$appdmgVersion',
+  ]);
   if (result.exitCode != 0) {
     stderr.write(result.stderr);
   }

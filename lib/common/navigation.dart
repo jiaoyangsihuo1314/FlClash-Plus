@@ -1,4 +1,5 @@
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/features/ai68/presentation/ai68_center_view.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/views/views.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,12 @@ class Navigation {
     bool hasProxies = false,
   }) {
     return [
+      NavigationItem(
+        icon: const Icon(Icons.account_circle),
+        label: PageLabel.ai68Center,
+        builder: (_) =>
+            const Ai68CenterView(key: GlobalObjectKey(PageLabel.ai68Center)),
+      ),
       NavigationItem(
         keep: false,
         icon: const Icon(Icons.space_dashboard),

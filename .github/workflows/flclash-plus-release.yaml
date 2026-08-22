@@ -1,0 +1,657 @@
+name: FlClash Plus Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Application environment
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - pre
+          - dev
+  push:
+    tags:
+      - 'plus-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flclash-plus-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'stable' }}
+  FLUTTER_VERSION: '3.44.4'
+  GO_VERSION: '1.26.5'
+  FLCLASH_PLUS_RELEASE_REPOSITORY: ${{ github.repository }}
+  AI68_PAYMENT_HOSTS: ${{ vars.AI68_PAYMENT_HOSTS }}
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+
+      - name: Validate release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_version="$(awk '$1 == "version:" { print $2; exit }' pubspec.yaml)"
+          if [[ -z "$package_version" || "$package_version" != *+* ]]; then
+            echo 'pubspec.yaml must contain a semantic version and numeric build number.' >&2
+            exit 1
+          fi
+          app_version="${package_version%%+*}"
+          build_number="${package_version#*+}"
+          if [[ ! "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unsupported application version: $app_version" >&2
+            exit 1
+          fi
+          if [[ ! "$build_number" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid application build number: $build_number" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/plus-v* ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^plus-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid release tag: $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+            if [[ "$GITHUB_REF_NAME" != "plus-v$app_version" ]]; then
+              echo "Release tag $GITHUB_REF_NAME does not match pubspec version $app_version." >&2
+              exit 1
+            fi
+            if [[ -z "$AI68_PAYMENT_HOSTS" ]]; then
+              echo 'AI68_PAYMENT_HOSTS must list the production payment domains for tagged releases.' >&2
+              exit 1
+            fi
+          fi
+          IFS=',' read -ra payment_hosts <<< "$AI68_PAYMENT_HOSTS"
+          for raw_host in "${payment_hosts[@]}"; do
+            host="$(printf '%s' "$raw_host" | xargs)"
+            [[ -z "$host" ]] && continue
+            if [[ ! "$host" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]]; then
+              echo "Invalid AI68 payment domain: $host" >&2
+              exit 1
+            fi
+          done
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: master
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test --concurrency=1 --reporter expanded
+
+      - name: Check Helper formatting
+        run: cargo fmt --manifest-path services/helper/Cargo.toml -- --check
+
+      - name: Test Helper contracts
+        env:
+          CORE_NAME: FlClashCore.exe
+          CORE_SHA256: 0000000000000000000000000000000000000000000000000000000000000000
+        run: cargo test --manifest-path services/helper/Cargo.toml
+
+      - name: Compile Core bridge
+        working-directory: core
+        env:
+          CGO_ENABLED: 0
+        run: go test .
+
+      - name: Vet Core bridge
+        working-directory: core
+        env:
+          CGO_ENABLED: 0
+        run: go vet .
+
+  android:
+    name: Android APK and AAB
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: master
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
+        with:
+          ndk-version: r28c
+          add-to-path: true
+          link-to-sdk: true
+
+      - name: Configure Android credentials
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.KEYSTORE }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD || secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+          SERVICE_JSON_BASE64: ${{ secrets.ANDROID_SERVICE_JSON_BASE64 || secrets.SERVICE_JSON }}
+          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/plus-v') }}
+        run: |
+          set -euo pipefail
+          signing_values=0
+          for value in "$KEYSTORE_BASE64" "$KEY_ALIAS" "$STORE_PASSWORD" "$KEY_PASSWORD"; do
+            if [[ -n "$value" ]]; then
+              signing_values=$((signing_values + 1))
+            fi
+          done
+          if [[ "$signing_values" -eq 4 ]]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+            {
+              printf 'keyAlias=%s\n' "$KEY_ALIAS"
+              printf 'storePassword=%s\n' "$STORE_PASSWORD"
+              printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+            } >> android/local.properties
+            echo 'ANDROID_SIGNING_MODE=release' >> "$GITHUB_ENV"
+          elif [[ "$signing_values" -eq 0 ]]; then
+            if [[ "$IS_TAG_RELEASE" == 'true' ]]; then
+              echo 'Tagged releases require all Android signing secrets.' >&2
+              exit 1
+            fi
+            echo 'ANDROID_SIGNING_MODE=test' >> "$GITHUB_ENV"
+          else
+            echo 'Android signing secrets must be supplied together.' >&2
+            exit 1
+          fi
+          if [[ -z "$SERVICE_JSON_BASE64" ]]; then
+            if [[ "$IS_TAG_RELEASE" == 'true' ]]; then
+              echo 'Tagged releases require ANDROID_SERVICE_JSON_BASE64.' >&2
+              exit 1
+            fi
+          else
+            printf '%s' "$SERVICE_JSON_BASE64" | base64 --decode > android/app/google-services.json
+            jq -e --arg package 'cn.ai68.flclashplus' \
+              '.client | any(.client_info.android_client_info.package_name == $package)' \
+              android/app/google-services.json > /dev/null
+            jq -e '.project_info.project_number != "000000000000" and .project_info.project_id != "dev"' \
+              android/app/google-services.json > /dev/null
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APKs
+        run: dart setup.dart android --env "${{ env.APP_ENV }}" --targets apk -v
+
+      - name: Build release app bundle
+        run: dart setup.dart android --env "${{ env.APP_ENV }}" --targets aab -v
+
+      - name: Verify Android artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(find dist -maxdepth 1 -type f -name '*.apk' -print)
+          mapfile -t bundles < <(find dist -maxdepth 1 -type f -name '*.aab' -print)
+          test "${#apks[@]}" -gt 0
+          test "${#bundles[@]}" -gt 0
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          test -x "$apksigner"
+          for apk in "${apks[@]}"; do
+            printf '%s\n' "$apk"
+            "$apksigner" verify --verbose --print-certs "$apk"
+          done
+          for bundle in "${bundles[@]}"; do
+            printf '%s\n' "$bundle"
+            jarsigner -verify "$bundle"
+          done
+          if [[ "$ANDROID_SIGNING_MODE" == 'release' ]]; then
+            apkanalyzer="$(find "$ANDROID_HOME/cmdline-tools" -type f -name apkanalyzer -print | head -n 1)"
+            test -x "$apkanalyzer"
+            for apk in "${apks[@]}"; do
+              package_id="$("$apkanalyzer" manifest application-id "$apk")"
+              if [[ "$package_id" != 'cn.ai68.flclashplus' ]]; then
+                echo "Unexpected Android application id: $package_id" >&2
+                exit 1
+              fi
+            done
+          fi
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flclash-plus-android
+          path: |
+            dist/*.apk
+            dist/*.aab
+          if-no-files-found: error
+          retention-days: 30
+
+  windows:
+    name: Windows x64
+    needs: validate
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+
+      - name: Validate Windows signing credentials
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/plus-v') }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $values = @(
+            $env:WINDOWS_CERTIFICATE_BASE64,
+            $env:WINDOWS_CERTIFICATE_PASSWORD
+          )
+          $supplied = @($values | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
+          if ($supplied -eq 2) {
+            Add-Content $env:GITHUB_ENV 'WINDOWS_SIGNING_MODE=release'
+          } elseif ($supplied -eq 0) {
+            if ($env:IS_TAG_RELEASE -eq 'true') {
+              throw 'Tagged releases require the Windows certificate and password.'
+            }
+            Add-Content $env:GITHUB_ENV 'WINDOWS_SIGNING_MODE=test'
+          } else {
+            throw 'Windows signing secrets must be supplied together.'
+          }
+
+      - name: Enable long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: master
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --version=6.7.1 --yes --no-progress
+          Add-Content $env:GITHUB_PATH "${env:ProgramFiles(x86)}\Inno Setup 6"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Test Windows Helper contracts
+        shell: pwsh
+        env:
+          CORE_NAME: FlClashCore.exe
+          CORE_SHA256: 0000000000000000000000000000000000000000000000000000000000000000
+        run: cargo test --manifest-path services/helper/Cargo.toml --features windows-service
+
+      - name: Build Windows application and portable ZIP
+        run: dart setup.dart windows --env "${{ env.APP_ENV }}" --targets zip -v
+
+      - name: Sign Windows application
+        if: ${{ env.WINDOWS_SIGNING_MODE == 'release' }}
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'flclash-plus.pfx'
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
+          $signTool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if ($null -eq $signTool) {
+            throw 'signtool.exe was not found.'
+          }
+          $buildOutput = Resolve-Path 'build\windows\x64\runner\Release'
+          Get-ChildItem $buildOutput -Recurse -File |
+            Where-Object {
+              $_.Extension -in '.exe', '.dll' -and $_.Name -ne 'FlClashCore.exe'
+            } |
+            ForEach-Object {
+              & $signTool.FullName sign /fd SHA256 /f $certificatePath /p $env:WINDOWS_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td SHA256 $_.FullName
+              if ($LASTEXITCODE -ne 0) {
+                throw "Failed to sign $($_.FullName)."
+              }
+            }
+
+      - name: Package signed Windows artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $buildOutput = (Resolve-Path 'build\windows\x64\runner\Release').Path
+          $distPath = (Resolve-Path 'dist').Path
+          $archives = @(Get-ChildItem dist -Filter '*.zip')
+          if ($archives.Count -ne 1) {
+            throw 'Expected exactly one generated portable ZIP.'
+          }
+          $archivePath = $archives[0].FullName
+          Remove-Item $archivePath
+          Compress-Archive -Path "$buildOutput\*" -DestinationPath $archivePath -CompressionLevel Optimal
+          $packageVersion = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)' | Select-Object -First 1).Matches.Groups[1].Value
+          $appVersion = $packageVersion.Split('+')[0]
+          $iscc = Get-Command ISCC.exe -ErrorAction Stop
+          $setupIcon = (Resolve-Path 'windows\runner\resources\app_icon.ico').Path
+          $chineseMessages = (Resolve-Path 'windows\packaging\exe\ChineseSimplified.isl').Path
+          & $iscc.Source "/DSourceDir=$buildOutput" "/DAppVersion=$appVersion" "/DOutputDir=$distPath" "/DSetupIconFile=$setupIcon" "/DChineseMessagesFile=$chineseMessages" windows\packaging\exe\flclash_plus_ci.iss
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Inno Setup compilation failed.'
+          }
+
+      - name: Sign Windows installer
+        if: ${{ env.WINDOWS_SIGNING_MODE == 'release' }}
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'flclash-plus.pfx'
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
+          $signTool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if ($null -eq $signTool) {
+            throw 'signtool.exe was not found.'
+          }
+          Get-ChildItem dist -Filter '*.exe' | ForEach-Object {
+            & $signTool.FullName sign /fd SHA256 /f $certificatePath /p $env:WINDOWS_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td SHA256 $_.FullName
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to sign $($_.FullName)."
+            }
+          }
+
+      - name: Verify Windows artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem dist -File
+          if (-not (Get-ChildItem dist -Filter '*.zip')) {
+            throw 'Portable ZIP was not generated.'
+          }
+          if (-not (Get-ChildItem dist -Filter '*.exe')) {
+            throw 'Inno Setup executable was not generated.'
+          }
+          $buildOutput = (Resolve-Path 'build\windows\x64\runner\Release').Path
+          $manifest = Get-Content (Join-Path $buildOutput 'manifest.json') -Raw | ConvertFrom-Json
+          $coreHash = (Get-FileHash (Join-Path $buildOutput 'FlClashCore.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($coreHash -ne $manifest.coreSha256) {
+            throw 'Windows Core SHA256 no longer matches the bundled manifest.'
+          }
+          if ($env:WINDOWS_SIGNING_MODE -eq 'release') {
+            $signedFiles = @(
+              (Join-Path $buildOutput 'FlClashPlus.exe'),
+              (Join-Path $buildOutput 'FlClashPlusHelperService.exe')
+            ) + @(Get-ChildItem dist -Filter '*.exe' | ForEach-Object FullName)
+            foreach ($file in $signedFiles) {
+              $signature = Get-AuthenticodeSignature $file
+              if ($signature.Status -ne 'Valid') {
+                throw "Invalid Authenticode signature for $file: $($signature.Status)"
+              }
+            }
+          }
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flclash-plus-windows-x64
+          path: |
+            dist/*.zip
+            dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: macos-15-intel
+          - arch: arm64
+            os: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+
+      - name: Validate macOS signing and notarization credentials
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IS_TAG_RELEASE: ${{ startsWith(github.ref, 'refs/tags/plus-v') }}
+        run: |
+          set -euo pipefail
+          supplied=0
+          for value in \
+            "$MACOS_CERTIFICATE_BASE64" \
+            "$MACOS_CERTIFICATE_PASSWORD" \
+            "$APPLE_ID" \
+            "$APPLE_APP_SPECIFIC_PASSWORD" \
+            "$APPLE_TEAM_ID"; do
+            [[ -n "$value" ]] && supplied=$((supplied + 1))
+          done
+          if [[ "$supplied" -eq 5 ]]; then
+            echo 'MACOS_SIGNING_MODE=release' >> "$GITHUB_ENV"
+          elif [[ "$supplied" -eq 0 ]]; then
+            if [[ "$IS_TAG_RELEASE" == 'true' ]]; then
+              echo 'Tagged releases require macOS signing and Apple notarization credentials.' >&2
+              exit 1
+            fi
+            echo 'MACOS_SIGNING_MODE=test' >> "$GITHUB_ENV"
+          else
+            echo 'macOS signing and notarization credentials must be supplied together.' >&2
+            exit 1
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: core/go.sum
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: master
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Setup Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+          for version in 26.3 26.2; do
+            if [[ -d "/Applications/Xcode_${version}.app" ]]; then
+              sudo xcode-select -s "/Applications/Xcode_${version}.app"
+              break
+            fi
+          done
+          xcodebuild -version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build application and DMG
+        run: dart setup.dart macos --env "${{ env.APP_ENV }}" --targets dmg -v
+
+      - name: Sign, notarize, and archive macOS application
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apps=(build/macos/Build/Products/Release/*.app)
+          dmgs=(dist/*.dmg)
+          test "${#apps[@]}" -gt 0
+          test "${#dmgs[@]}" -gt 0
+          app_path="${apps[0]}"
+          dmg_path="${dmgs[0]}"
+          if [[ "$MACOS_SIGNING_MODE" == 'release' ]]; then
+            certificate_path="$RUNNER_TEMP/flclash-plus.p12"
+            keychain_path="$RUNNER_TEMP/flclash-plus.keychain-db"
+            keychain_password="$(openssl rand -hex 24)"
+            trap 'security delete-keychain "$keychain_path" >/dev/null 2>&1 || true' EXIT
+            printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+            security create-keychain -p "$keychain_password" "$keychain_path"
+            security set-keychain-settings -lut 21600 "$keychain_path"
+            security unlock-keychain -p "$keychain_password" "$keychain_path"
+            security import "$certificate_path" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain_path"
+            security list-keychains -d user -s "$keychain_path" login.keychain-db
+            signing_identity="$MACOS_SIGNING_IDENTITY"
+            if [[ -z "$signing_identity" ]]; then
+              signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F '"' 'NR == 1 { print $2 }')"
+            fi
+            test -n "$signing_identity"
+            codesign --force --deep --options runtime --timestamp --entitlements macos/Runner/Release.entitlements --sign "$signing_identity" "$app_path"
+            codesign --verify --deep --strict --verbose=2 "$app_path"
+            notary_archive="$RUNNER_TEMP/flclash-plus-notary.zip"
+            ditto -c -k --sequesterRsrc --keepParent "$app_path" "$notary_archive"
+            xcrun notarytool submit "$notary_archive" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            xcrun stapler staple "$app_path"
+            xcrun stapler validate "$app_path"
+            spctl --assess --type execute --verbose=4 "$app_path"
+            dmg_name="$(basename "$dmg_path")"
+            volume_dir="$RUNNER_TEMP/flclash-plus-volume"
+            rm -rf "$volume_dir"
+            mkdir -p "$volume_dir"
+            ditto "$app_path" "$volume_dir/$(basename "$app_path")"
+            ln -s /Applications "$volume_dir/Applications"
+            rm -f "$dmg_path"
+            hdiutil create -volname 'FlClash Plus' -srcfolder "$volume_dir" -ov -format UDZO "dist/$dmg_name"
+            dmg_path="dist/$dmg_name"
+            codesign --force --timestamp --sign "$signing_identity" "$dmg_path"
+            codesign --verify --verbose=2 "$dmg_path"
+            xcrun notarytool submit "$dmg_path" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            xcrun stapler staple "$dmg_path"
+            xcrun stapler validate "$dmg_path"
+            spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg_path"
+          fi
+          app_archive="${dmg_path%.dmg}.app.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "$app_archive"
+
+      - name: Verify macOS artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dmgs=(dist/*.dmg)
+          apps=(dist/*.app.zip)
+          printf '%s\n' "${dmgs[@]}" "${apps[@]}"
+          test "${#dmgs[@]}" -gt 0
+          test "${#apps[@]}" -gt 0
+          if [[ "$MACOS_SIGNING_MODE" == 'release' ]]; then
+            codesign --verify --verbose=2 "${dmgs[0]}"
+            xcrun stapler validate "${dmgs[0]}"
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flclash-plus-macos-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.app.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/plus-v')
+    needs: [android, windows, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: release
+          pattern: flclash-plus-*
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: release
+        run: sha256sum ./* > SHA256SUMS
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          name: FlClash Plus ${{ github.ref_name }}
+          files: release/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}

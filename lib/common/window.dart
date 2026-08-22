@@ -25,6 +25,7 @@ class Window {
       protocol.register('clash');
       protocol.register('clashmeta');
       protocol.register('flclash');
+      protocol.register('flclashplus');
     }
     await windowManager.ensureInitialized();
     final WindowOptions windowOptions = WindowOptions(

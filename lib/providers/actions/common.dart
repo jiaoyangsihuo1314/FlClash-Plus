@@ -75,7 +75,15 @@ class CommonAction extends _$CommonAction {
         cancelText: isUser ? null : currentAppLocalizations.noLongerRemind,
       );
       if (res == true) {
-        launchUrl(Uri.parse('https://github.com/$repository/releases/latest'));
+        final releaseUri = Uri.tryParse(data['html_url']?.toString() ?? '');
+        final uri =
+            releaseUri != null &&
+                releaseUri.scheme == 'https' &&
+                releaseUri.host == 'github.com' &&
+                releaseUri.userInfo.isEmpty
+            ? releaseUri
+            : Uri.parse(ai68Website);
+        launchUrl(uri);
       } else if (!isUser && res == false) {
         ref
             .read(appSettingProvider.notifier)

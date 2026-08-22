@@ -237,7 +237,7 @@ void main() {
     final adapter = _ResponseAdapter((options) {
       expect(options.queryParameters, {'coreSha256': _coreSha256});
       return ResponseBody.fromString(
-        r'C:\Program Files\FlClash\FlClashHelperService.exe',
+        r'C:\Program Files\FlClash Plus\FlClashPlusHelperService.exe',
         200,
         headers: {
           helperProtocolVersionHeader: [helperProtocolVersion],
@@ -248,7 +248,7 @@ void main() {
     final client = _client(
       adapter,
       expectedHelperPath: () =>
-          r'C:\Program Files\FlClash\FlClashHelperService.exe',
+          r'C:\Program Files\FlClash Plus\FlClashPlusHelperService.exe',
     );
 
     expect(await client.readiness(), WindowsHelperReadiness.ready);

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/features/ai68/ai68.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
 import 'package:fl_clash/manager/manager.dart';
@@ -49,7 +50,9 @@ class ApplicationState extends ConsumerState<Application> {
     SystemNavigator.setFrameworkHandlesBack(true);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (globalState.navigatorKey.currentContext != null) {
+        globalState.needInitStatus = false;
         await globalState.attach();
+        await ref.read(ai68CommercialProvider.notifier).bootstrap();
       } else {
         exit(0);
       }
@@ -86,6 +89,11 @@ class ApplicationState extends ConsumerState<Application> {
   void _autoUpdateProfilesTask() {
     _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 20), () async {
       await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+      if (ref.read(ai68CommercialProvider).isAuthenticated) {
+        await ref
+            .read(ai68CommercialProvider.notifier)
+            .refresh(syncProfile: true);
+      }
       _autoUpdateProfilesTask();
     });
   }
@@ -182,7 +190,7 @@ class ApplicationState extends ConsumerState<Application> {
           home: child!,
         );
       },
-      child: const HomePage(),
+      child: const Ai68EntryGate(child: HomePage()),
     );
   }
 

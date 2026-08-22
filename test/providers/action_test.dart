@@ -326,6 +326,33 @@ void main() {
         await action.setRunning(false);
       });
 
+      test(
+        'strict start rejects listener failure and rolls back state',
+        () async {
+          final container = ProviderContainer(
+            overrides: [
+              initProvider.overrideWithBuild((_, _) => true),
+              commonActionProvider.overrideWith(_RaceCommonAction.new),
+              setupActionProvider.overrideWith(_RaceSetupAction.new),
+            ],
+          );
+          addTearDown(container.dispose);
+          final action =
+              container.read(setupActionProvider.notifier) as _RaceSetupAction;
+          action.startCompleter = Completer<bool>()..complete(false);
+
+          await expectLater(
+            action.setRunning(true, requireSuccess: true),
+            throwsA(isA<StateError>()),
+          );
+
+          expect(action.transitions, [true]);
+          expect(container.read(isStartProvider), isFalse);
+          expect(container.read(runTimeProvider), isNull);
+          expect(action.applyProfileDebounceCount, 0);
+        },
+      );
+
       test('serializes listener changes while latest start owns UI', () async {
         final stopCompleter = Completer<bool>();
         final container = ProviderContainer(
@@ -648,7 +675,11 @@ class _TestSetupAction extends SetupAction {
   Completer<void>? firstApplyCompleter;
 
   @override
-  Future<void> setRunning(bool running, {bool initialize = false}) async {
+  Future<void> setRunning(
+    bool running, {
+    bool initialize = false,
+    bool requireSuccess = false,
+  }) async {
     setRunningCount++;
   }
 
@@ -656,6 +687,7 @@ class _TestSetupAction extends SetupAction {
   Future<void> applyProfile({
     bool silence = false,
     bool force = false,
+    bool throwOnError = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     applyProfileCount++;
@@ -738,6 +770,7 @@ class _InitializingSetupAction extends _RaceSetupAction {
   Future<void> applyProfile({
     bool silence = false,
     bool force = false,
+    bool throwOnError = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     await _initializationCompleter.future;

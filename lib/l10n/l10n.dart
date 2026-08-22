@@ -3479,10 +3479,10 @@ class AppLocalizations {
     );
   }
 
-  /// `Helper service unavailable; TUN mode cannot be enabled. Reinstall FlClash to restore it.`
+  /// `Helper service unavailable; TUN mode cannot be enabled. Reinstall FlClash Plus to restore it.`
   String get helperCorruptTip {
     return Intl.message(
-      'Helper service unavailable; TUN mode cannot be enabled. Reinstall FlClash to restore it.',
+      'Helper service unavailable; TUN mode cannot be enabled. Reinstall FlClash Plus to restore it.',
       name: 'helperCorruptTip',
       desc: '',
       args: [],
@@ -4521,6 +4521,476 @@ class AppLocalizations {
       name: 'entriesCount',
       desc: '',
       args: [count],
+    );
+  }
+
+  /// `AI68`
+  String get ai68Center {
+    return Intl.message('AI68', name: 'ai68Center', desc: '', args: []);
+  }
+
+  /// `Welcome to FlClash Plus`
+  String get ai68WelcomeTitle {
+    return Intl.message(
+      'Welcome to FlClash Plus',
+      name: 'ai68WelcomeTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Finish setup in one minute`
+  String get ai68WelcomeSubtitle {
+    return Intl.message(
+      'Finish setup in one minute',
+      name: 'ai68WelcomeSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in to AI68`
+  String get ai68LoginAccount {
+    return Intl.message(
+      'Sign in to AI68',
+      name: 'ai68LoginAccount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use local mode`
+  String get ai68LocalMode {
+    return Intl.message(
+      'Use local mode',
+      name: 'ai68LocalMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Detect network automatically`
+  String get ai68AutoDetectNetwork {
+    return Intl.message(
+      'Detect network automatically',
+      name: 'ai68AutoDetectNetwork',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select the best node automatically`
+  String get ai68AutoSelectNode {
+    return Intl.message(
+      'Select the best node automatically',
+      name: 'ai68AutoSelectNode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ready`
+  String get ai68Complete {
+    return Intl.message('Ready', name: 'ai68Complete', desc: '', args: []);
+  }
+
+  /// `Email`
+  String get ai68Email {
+    return Intl.message('Email', name: 'ai68Email', desc: '', args: []);
+  }
+
+  /// `Password`
+  String get ai68Password {
+    return Intl.message('Password', name: 'ai68Password', desc: '', args: []);
+  }
+
+  /// `Sign in`
+  String get ai68Login {
+    return Intl.message('Sign in', name: 'ai68Login', desc: '', args: []);
+  }
+
+  /// `Register`
+  String get ai68Register {
+    return Intl.message('Register', name: 'ai68Register', desc: '', args: []);
+  }
+
+  /// `Create AI68 account`
+  String get ai68CreateAccount {
+    return Intl.message(
+      'Create AI68 account',
+      name: 'ai68CreateAccount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Back to sign in`
+  String get ai68BackToLogin {
+    return Intl.message(
+      'Back to sign in',
+      name: 'ai68BackToLogin',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite code`
+  String get ai68InviteCode {
+    return Intl.message(
+      'Invite code',
+      name: 'ai68InviteCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email verification code`
+  String get ai68EmailCode {
+    return Intl.message(
+      'Email verification code',
+      name: 'ai68EmailCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send code`
+  String get ai68SendCode {
+    return Intl.message('Send code', name: 'ai68SendCode', desc: '', args: []);
+  }
+
+  /// `Account`
+  String get ai68Account {
+    return Intl.message('Account', name: 'ai68Account', desc: '', args: []);
+  }
+
+  /// `Plan`
+  String get ai68Plan {
+    return Intl.message('Plan', name: 'ai68Plan', desc: '', args: []);
+  }
+
+  /// `Traffic`
+  String get ai68Traffic {
+    return Intl.message('Traffic', name: 'ai68Traffic', desc: '', args: []);
+  }
+
+  /// `Expiry`
+  String get ai68Expiry {
+    return Intl.message('Expiry', name: 'ai68Expiry', desc: '', args: []);
+  }
+
+  /// `Orders`
+  String get ai68Orders {
+    return Intl.message('Orders', name: 'ai68Orders', desc: '', args: []);
+  }
+
+  /// `Notices`
+  String get ai68Notices {
+    return Intl.message('Notices', name: 'ai68Notices', desc: '', args: []);
+  }
+
+  /// `Nodes`
+  String get ai68Nodes {
+    return Intl.message('Nodes', name: 'ai68Nodes', desc: '', args: []);
+  }
+
+  /// `Plans`
+  String get ai68Store {
+    return Intl.message('Plans', name: 'ai68Store', desc: '', args: []);
+  }
+
+  /// `Refresh`
+  String get ai68Refresh {
+    return Intl.message('Refresh', name: 'ai68Refresh', desc: '', args: []);
+  }
+
+  /// `Sign out`
+  String get ai68Logout {
+    return Intl.message('Sign out', name: 'ai68Logout', desc: '', args: []);
+  }
+
+  /// `No active plan`
+  String get ai68NoPlan {
+    return Intl.message(
+      'No active plan',
+      name: 'ai68NoPlan',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No orders`
+  String get ai68NoOrders {
+    return Intl.message('No orders', name: 'ai68NoOrders', desc: '', args: []);
+  }
+
+  /// `No notices`
+  String get ai68NoNotices {
+    return Intl.message(
+      'No notices',
+      name: 'ai68NoNotices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect`
+  String get ai68Connect {
+    return Intl.message('Connect', name: 'ai68Connect', desc: '', args: []);
+  }
+
+  /// `Disconnect`
+  String get ai68Disconnect {
+    return Intl.message(
+      'Disconnect',
+      name: 'ai68Disconnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connecting`
+  String get ai68Connecting {
+    return Intl.message(
+      'Connecting',
+      name: 'ai68Connecting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `United States`
+  String get ai68UnitedStates {
+    return Intl.message(
+      'United States',
+      name: 'ai68UnitedStates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Japan`
+  String get ai68Japan {
+    return Intl.message('Japan', name: 'ai68Japan', desc: '', args: []);
+  }
+
+  /// `Hong Kong`
+  String get ai68HongKong {
+    return Intl.message('Hong Kong', name: 'ai68HongKong', desc: '', args: []);
+  }
+
+  /// `Automatic`
+  String get ai68Automatic {
+    return Intl.message('Automatic', name: 'ai68Automatic', desc: '', args: []);
+  }
+
+  /// `Used`
+  String get ai68UsedTraffic {
+    return Intl.message('Used', name: 'ai68UsedTraffic', desc: '', args: []);
+  }
+
+  /// `Remaining`
+  String get ai68RemainingTraffic {
+    return Intl.message(
+      'Remaining',
+      name: 'ai68RemainingTraffic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Expires`
+  String get ai68ExpiresAt {
+    return Intl.message('Expires', name: 'ai68ExpiresAt', desc: '', args: []);
+  }
+
+  /// `Permanent`
+  String get ai68Permanent {
+    return Intl.message('Permanent', name: 'ai68Permanent', desc: '', args: []);
+  }
+
+  /// `Buy`
+  String get ai68Buy {
+    return Intl.message('Buy', name: 'ai68Buy', desc: '', args: []);
+  }
+
+  /// `Pay`
+  String get ai68Pay {
+    return Intl.message('Pay', name: 'ai68Pay', desc: '', args: []);
+  }
+
+  /// `Cancel order`
+  String get ai68CancelOrder {
+    return Intl.message(
+      'Cancel order',
+      name: 'ai68CancelOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Monthly`
+  String get ai68Monthly {
+    return Intl.message('Monthly', name: 'ai68Monthly', desc: '', args: []);
+  }
+
+  /// `Quarterly`
+  String get ai68Quarterly {
+    return Intl.message('Quarterly', name: 'ai68Quarterly', desc: '', args: []);
+  }
+
+  /// `Half-year`
+  String get ai68HalfYear {
+    return Intl.message('Half-year', name: 'ai68HalfYear', desc: '', args: []);
+  }
+
+  /// `Yearly`
+  String get ai68Yearly {
+    return Intl.message('Yearly', name: 'ai68Yearly', desc: '', args: []);
+  }
+
+  /// `One-time`
+  String get ai68OneTime {
+    return Intl.message('One-time', name: 'ai68OneTime', desc: '', args: []);
+  }
+
+  /// `Reset traffic`
+  String get ai68ResetTraffic {
+    return Intl.message(
+      'Reset traffic',
+      name: 'ai68ResetTraffic',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Order created`
+  String get ai68OrderCreated {
+    return Intl.message(
+      'Order created',
+      name: 'ai68OrderCreated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select payment method`
+  String get ai68SelectPayment {
+    return Intl.message(
+      'Select payment method',
+      name: 'ai68SelectPayment',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get ai68Retry {
+    return Intl.message('Retry', name: 'ai68Retry', desc: '', args: []);
+  }
+
+  /// `Open original FlClash features`
+  String get ai68OpenManualMode {
+    return Intl.message(
+      'Open original FlClash features',
+      name: 'ai68OpenManualMode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Balance`
+  String get ai68Balance {
+    return Intl.message('Balance', name: 'ai68Balance', desc: '', args: []);
+  }
+
+  /// `Online`
+  String get ai68Online {
+    return Intl.message('Online', name: 'ai68Online', desc: '', args: []);
+  }
+
+  /// `Offline`
+  String get ai68Offline {
+    return Intl.message('Offline', name: 'ai68Offline', desc: '', args: []);
+  }
+
+  /// `Speed limit`
+  String get ai68SpeedLimit {
+    return Intl.message(
+      'Speed limit',
+      name: 'ai68SpeedLimit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device limit`
+  String get ai68DeviceLimit {
+    return Intl.message(
+      'Device limit',
+      name: 'ai68DeviceLimit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Traffic is running low`
+  String get ai68TrafficReminder {
+    return Intl.message(
+      'Traffic is running low',
+      name: 'ai68TrafficReminder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your plan will expire soon`
+  String get ai68ExpiryReminder {
+    return Intl.message(
+      'Your plan will expire soon',
+      name: 'ai68ExpiryReminder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pending payment`
+  String get ai68OrderPending {
+    return Intl.message(
+      'Pending payment',
+      name: 'ai68OrderPending',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Completed`
+  String get ai68OrderCompleted {
+    return Intl.message(
+      'Completed',
+      name: 'ai68OrderCompleted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancelled`
+  String get ai68OrderCancelled {
+    return Intl.message(
+      'Cancelled',
+      name: 'ai68OrderCancelled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Coupon code`
+  String get ai68CouponCode {
+    return Intl.message(
+      'Coupon code',
+      name: 'ai68CouponCode',
+      desc: '',
+      args: [],
     );
   }
 }

@@ -18,4 +18,13 @@
             android:fillColor="#5CA8E9"
             android:pathData="M108.65,172.74L108.65,172.74A18,18 116.03,0 1,133.24 179.33L133.24,179.33A18,18 116.03,0 1,126.65 203.92L126.65,203.92A18,18 116.03,0 1,102.06 197.33L102.06,197.33A18,18 116.03,0 1,108.65 172.74z" />
     </group>
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M170,144A26,26 0,1 1,169.99 144z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M155,166L185,166L185,174L155,174z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M166,155L174,155L174,185L166,185z" />
 </vector>

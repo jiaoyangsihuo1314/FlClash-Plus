@@ -20,7 +20,7 @@ use warp::{Filter, Rejection, Reply};
 #[cfg(windows)]
 use windows_sys::Win32::Storage::FileSystem::FILE_SHARE_READ;
 
-const LISTEN_PORT: u16 = 47890;
+const LISTEN_PORT: u16 = 47891;
 const CORE_PIPE_PREFIX: &str = r"\\.\pipe\FlClashCore_";
 const PROTOCOL_VERSION_HEADER: &str = "x-flclash-helper-protocol";
 const PROTOCOL_VERSION: &str = "6";
@@ -619,6 +619,11 @@ mod tests {
     }
 
     #[test]
+    fn uses_plus_specific_loopback_port() {
+        assert_eq!(LISTEN_PORT, 47891);
+    }
+
+    #[test]
     fn stop_decision_never_touches_another_session() {
         let requested = "0123456789abcdef0123456789abcdef";
         let other = "fedcba9876543210fedcba9876543210";
@@ -636,7 +641,7 @@ mod tests {
 
     #[tokio::test]
     async fn ping_returns_running_helper_path_for_verified_core() {
-        let response = ping_response(Ok(PathBuf::from("FlClashHelperService.exe")));
+        let response = ping_response(Ok(PathBuf::from("FlClashPlusHelperService.exe")));
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(
@@ -647,7 +652,7 @@ mod tests {
             warp::hyper::body::to_bytes(response.into_body())
                 .await
                 .unwrap(),
-            "FlClashHelperService.exe"
+            "FlClashPlusHelperService.exe"
         );
     }
 

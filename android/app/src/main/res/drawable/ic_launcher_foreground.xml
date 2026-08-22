@@ -22,4 +22,13 @@
                     android:fillColor="#5CA8E9"/>
         </group>
     </group>
+    <path
+            android:pathData="M170,144A26,26 0,1 1,169.99 144z"
+            android:fillColor="#14B8A6"/>
+    <path
+            android:pathData="M155,166L185,166L185,174L155,174z"
+            android:fillColor="#FFFFFF"/>
+    <path
+            android:pathData="M166,155L174,155L174,185L166,185z"
+            android:fillColor="#FFFFFF"/>
 </vector>

@@ -48,15 +48,18 @@ class AboutView extends StatelessWidget {
           },
         ),
         ListItem(
-          title: const Text('Telegram'),
+          title: const Text('AI68'),
           onTap: () {
-            globalState.openUrl('https://t.me/FlClash');
+            globalState.openUrl(ai68Website);
           },
           trailing: const Icon(Icons.launch),
         ),
         ListItem(
           title: Text(appLocalizations.project),
           onTap: () {
+            final repository = releaseRepository.isEmpty
+                ? upstreamRepository
+                : releaseRepository;
             globalState.openUrl('https://github.com/$repository');
           },
           trailing: const Icon(Icons.launch),

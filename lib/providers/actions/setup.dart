@@ -74,14 +74,14 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<void> initStatus() async {
-    if (!globalState.needInitStatus) {
+    if (system.isAndroid) {
+      await _updateStartTime();
+    }
+    if (!globalState.needInitStatus && !_isRunning) {
       commonPrint.log('init status cancel');
       return;
     }
     commonPrint.log('init status');
-    if (system.isAndroid) {
-      await _updateStartTime();
-    }
     final shouldRun = _isRunning || ref.read(appSettingProvider).autoRun;
     if (shouldRun) {
       await setRunning(true, initialize: true);
@@ -90,9 +90,16 @@ class SetupAction extends _$SetupAction {
     }
   }
 
-  Future<void> setRunning(bool running, {bool initialize = false}) {
+  Future<void> setRunning(
+    bool running, {
+    bool initialize = false,
+    bool requireSuccess = false,
+  }) async {
     if (running && !initialize && !ref.read(initProvider)) {
-      return Future.value();
+      if (requireSuccess) {
+        throw StateError('Application initialization is incomplete');
+      }
+      return;
     }
 
     final request = _RunRequest(
@@ -104,10 +111,24 @@ class SetupAction extends _$SetupAction {
     if (request.initialize) {
       globalState.needInitStatus = false;
     }
-    return running ? _start(request) : _stop(request);
+    try {
+      if (running) {
+        await _start(request, requireSuccess: requireSuccess);
+      } else {
+        await _stop(request);
+      }
+    } catch (_) {
+      if (_isCurrent(request)) {
+        _setLocalRunning(false);
+      }
+      rethrow;
+    }
   }
 
-  Future<void> _start(_RunRequest request) async {
+  Future<void> _start(
+    _RunRequest request, {
+    bool requireSuccess = false,
+  }) async {
     if (request.initialize) {
       try {
         await applyProfile(
@@ -122,7 +143,10 @@ class SetupAction extends _$SetupAction {
       return;
     }
 
-    await _setCoreRunning(request);
+    final started = await _setCoreRunning(request);
+    if (requireSuccess && !started) {
+      throw StateError('Unable to start the proxy listener');
+    }
     if (_isCurrent(request)) {
       applyProfileDebounce(force: true, silence: true);
     }
@@ -139,15 +163,15 @@ class SetupAction extends _$SetupAction {
     ref.read(checkIpNumProvider.notifier).add();
   }
 
-  Future<void> _setCoreRunning(_RunRequest request) {
+  Future<bool> _setCoreRunning(_RunRequest request) {
     return _listenerScheduler.run(() async {
       if (!_isCurrent(request)) {
-        return;
+        return false;
       }
       if (request.running && ref.read(suspendProvider)) {
-        return;
+        return false;
       }
-      await setCoreRunning(request.running);
+      return setCoreRunning(request.running);
     });
   }
 
@@ -224,11 +248,13 @@ class SetupAction extends _$SetupAction {
   Future<void> applyProfile({
     bool silence = false,
     bool force = false,
+    bool throwOnError = false,
     Future<void> Function()? preloadInvoke,
   }) {
     return _runSetup(
       force: force,
       silence: silence,
+      throwOnError: throwOnError,
       preloadInvoke: preloadInvoke,
     );
   }
@@ -236,12 +262,14 @@ class SetupAction extends _$SetupAction {
   Future<void> _runSetup({
     bool silence = false,
     bool force = false,
+    bool throwOnError = false,
     Future<void> Function()? preloadInvoke,
   }) async {
     final result = await _setupScheduler.run(() {
       return _setupConfig(
         force: force,
         silence: silence,
+        throwOnError: throwOnError,
         preloadInvoke: preloadInvoke,
         onUpdated: () async {
           await ref.read(proxiesActionProvider.notifier).updateGroups();
@@ -376,6 +404,7 @@ class SetupAction extends _$SetupAction {
   Future<_SetupTaskResult> _setupConfig({
     bool force = false,
     bool silence = false,
+    bool throwOnError = false,
     Future<void> Function()? preloadInvoke,
     FutureOr Function()? onUpdated,
   }) async {
@@ -410,24 +439,30 @@ class SetupAction extends _$SetupAction {
       final sharedState = ref.read(sharedStateProvider);
       await preferences.saveShareState(sharedState);
     }
-    await globalState.loadingRun(
-      () async {
-        final configFilePath = await appPath.configFilePath;
-        await File(configFilePath).safeWriteAsString(yamlString);
-        final message = await coreController.setupConfig(
-          params: _setupParams,
-          preloadInvoke: preloadInvoke,
-        );
-        if (message.isNotEmpty && !message.endsWith('is empty')) {
-          throw message;
-        }
-        globalState.lastConfigMd5 = yamlMd5;
-        ref.read(checkIpNumProvider.notifier).add();
-        await onUpdated?.call();
-      },
-      silence: true,
-      tag: !silence ? LoadingTag.proxies : null,
-    );
+    Future<void> applyConfig() async {
+      final configFilePath = await appPath.configFilePath;
+      await File(configFilePath).safeWriteAsString(yamlString);
+      final message = await coreController.setupConfig(
+        params: _setupParams,
+        preloadInvoke: preloadInvoke,
+      );
+      if (message.isNotEmpty && !message.endsWith('is empty')) {
+        throw message;
+      }
+      globalState.lastConfigMd5 = yamlMd5;
+      ref.read(checkIpNumProvider.notifier).add();
+      await onUpdated?.call();
+    }
+
+    if (throwOnError) {
+      await applyConfig();
+    } else {
+      await globalState.loadingRun(
+        applyConfig,
+        silence: true,
+        tag: !silence ? LoadingTag.proxies : null,
+      );
+    }
     return _SetupTaskResult.completed;
   }
 }

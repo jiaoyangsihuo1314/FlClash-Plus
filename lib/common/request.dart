@@ -10,6 +10,39 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/cupertino.dart';
 
+final _plusReleaseVersionPattern = RegExp(
+  r'^plus-v(\d+(?:\.\d+){0,2}(?:\+\d+)?)$',
+);
+
+Map<String, dynamic>? selectLatestPlusRelease(
+  Iterable<Object?> releases, {
+  required String currentVersion,
+}) {
+  Map<String, dynamic>? latest;
+  String? latestVersion;
+  for (final item in releases) {
+    if (item is! Map) continue;
+    final release = Map<String, dynamic>.from(item);
+    if (release['draft'] == true || release['prerelease'] == true) continue;
+    final tagName = release['tag_name'];
+    if (tagName is! String) continue;
+    final match = _plusReleaseVersionPattern.firstMatch(tagName);
+    if (match == null) continue;
+    final version = match.group(1)!;
+    try {
+      if (utils.compareVersions(version, currentVersion) <= 0) continue;
+      if (latestVersion == null ||
+          utils.compareVersions(version, latestVersion) > 0) {
+        latest = release;
+        latestVersion = version;
+      }
+    } on FormatException {
+      continue;
+    }
+  }
+  return latest;
+}
+
 class Request {
   late final Dio dio;
   late final Dio _clashDio;
@@ -70,19 +103,19 @@ class Request {
   }
 
   Future<Map<String, dynamic>?> checkForUpdate() async {
+    if (releaseRepository.isEmpty) return null;
     try {
-      final response = await dio.get(
-        'https://api.github.com/repos/$repository/releases/latest',
+      final response = await dio.get<List<dynamic>>(
+        'https://api.github.com/repos/$releaseRepository/releases',
+        queryParameters: const <String, dynamic>{'per_page': 50},
         options: Options(responseType: ResponseType.json),
       );
-      if (response.statusCode != 200) return null;
-      final data = response.data as Map<String, dynamic>;
-      final remoteVersion = data['tag_name'];
-      final version = globalState.packageInfo.version;
-      final hasUpdate =
-          utils.compareVersions(remoteVersion.replaceAll('v', ''), version) > 0;
-      if (!hasUpdate) return null;
-      return data;
+      final data = response.data;
+      if (response.statusCode != 200 || data == null) return null;
+      return selectLatestPlusRelease(
+        data,
+        currentVersion: globalState.packageInfo.version,
+      );
     } catch (e) {
       commonPrint.log('checkForUpdate failed', logLevel: LogLevel.warning);
       return null;

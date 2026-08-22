@@ -28,6 +28,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
+        android:allowBackup="false"
         android:name=".FlClashApplication"
         android:banner="@mipmap/ic_banner"
         android:hardwareAccelerated="true"
@@ -63,6 +64,7 @@
                 <data android:scheme="clash" />
                 <data android:scheme="clashmeta" />
                 <data android:scheme="flclash" />
+                <data android:scheme="flclashplus" />
 
                 <data android:host="install-config" />
             </intent-filter>

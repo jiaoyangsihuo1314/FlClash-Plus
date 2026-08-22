@@ -37,7 +37,7 @@ class BuildConfig {
     libName: 'libclash',
     outputDir: 'libclash',
     helperDir: 'services/helper',
-    helperName: 'FlClashHelperService',
+    helperName: 'FlClashPlusHelperService',
     distDir: 'dist',
   );
 
