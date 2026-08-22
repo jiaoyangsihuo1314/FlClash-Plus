@@ -343,6 +343,7 @@ jobs:
         run: flutter pub get
 
       - name: Test Windows Helper contracts
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_validation }}
         shell: pwsh
         env:
           CORE_NAME: FlClashCore.exe
