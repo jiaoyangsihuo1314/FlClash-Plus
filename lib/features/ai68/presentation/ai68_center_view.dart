@@ -472,33 +472,50 @@ class _Ai68PlansTab extends StatelessWidget {
       itemCount: plans.length,
       itemBuilder: (context, index) {
         final plan = plans[index];
-        final lowest = plan.pricesCents.values
-            .whereType<int>()
-            .where((price) => price > 0)
-            .fold<int?>(null, (value, price) {
-              return value == null || price < value ? price : value;
-            });
+        final prices = plan.pricesCents.entries
+            .where((entry) => (entry.value ?? 0) > 0)
+            .map((entry) => MapEntry(entry.key, entry.value!))
+            .toList(growable: false);
+        final lowest = prices.isEmpty
+            ? null
+            : prices.map((entry) => entry.value).reduce(min);
         return CommonCard(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final details = Row(
+                final isCompact = constraints.maxWidth < 600;
+                final identity = Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.workspace_premium_outlined),
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: context.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.workspace_premium_outlined,
+                        color: context.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(plan.name, style: context.textTheme.titleMedium),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${plan.transferEnableGb} GB · ${plan.speedLimitMbps ?? '-'} Mbps · ${plan.deviceLimit ?? '-'} ${l10n.ai68DeviceLimit}',
-                            style: context.textTheme.bodyMedium?.copyWith(
-                              color: context.colorScheme.onSurfaceVariant,
+                          if (plan.tags.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: plan.tags
+                                  .map((tag) => _Ai68PlanTag(text: tag))
+                                  .toList(growable: false),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -521,21 +538,69 @@ class _Ai68PlansTab extends StatelessWidget {
                     ),
                   ],
                 );
-                if (constraints.maxWidth < 520) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      details,
-                      const SizedBox(height: 14),
-                      Align(alignment: Alignment.centerRight, child: action),
-                    ],
-                  );
-                }
-                return Row(
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: details),
-                    const SizedBox(width: 12),
-                    action,
+                    if (isCompact)
+                      identity
+                    else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: identity),
+                          const SizedBox(width: 24),
+                          action,
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+                    _Ai68PlanMetrics(plan: plan),
+                    if (prices.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: prices
+                            .map(
+                              (entry) => _Ai68PlanPrice(
+                                period: entry.key,
+                                priceCents: entry.value,
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                    ],
+                    if (_parsePlanContent(plan.content).isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Divider(color: context.colorScheme.outlineVariant),
+                      const SizedBox(height: 8),
+                      _Ai68PlanDescription(
+                        key: ValueKey('ai68-plan-description-${plan.id}'),
+                        content: plan.content!,
+                      ),
+                    ],
+                    if (isCompact) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            lowest == null
+                                ? '-'
+                                : _formatMoney(context, lowest),
+                            style: context.textTheme.titleLarge,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: state.isOrdering || lowest == null
+                                  ? null
+                                  : () => onBuy(plan),
+                              icon: const Icon(Icons.shopping_cart_checkout),
+                              label: Text(l10n.ai68Buy),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 );
               },
@@ -544,6 +609,173 @@ class _Ai68PlansTab extends StatelessWidget {
         );
       },
       separatorBuilder: (_, _) => const SizedBox(height: 10),
+    );
+  }
+}
+
+class _Ai68PlanMetrics extends StatelessWidget {
+  const _Ai68PlanMetrics({required this.plan});
+
+  final Ai68Plan plan;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.appLocalizations;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _Ai68PlanMetric(
+          icon: Icons.data_usage,
+          text: '${plan.transferEnableGb} GB',
+        ),
+        _Ai68PlanMetric(
+          icon: Icons.speed,
+          text: '${_formatPlanSpeed(plan.speedLimitMbps)} Mbps',
+        ),
+        _Ai68PlanMetric(
+          icon: Icons.devices_outlined,
+          text: '${plan.deviceLimit ?? '∞'} ${l10n.ai68DeviceLimit}',
+        ),
+      ],
+    );
+  }
+}
+
+class _Ai68PlanMetric extends StatelessWidget {
+  const _Ai68PlanMetric({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: context.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 17, color: context.colorScheme.primary),
+          const SizedBox(width: 7),
+          Text(text, style: context.textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _Ai68PlanTag extends StatelessWidget {
+  const _Ai68PlanTag({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: context.textTheme.labelMedium?.copyWith(
+          color: context.colorScheme.onSecondaryContainer,
+        ),
+      ),
+    );
+  }
+}
+
+class _Ai68PlanPrice extends StatelessWidget {
+  const _Ai68PlanPrice({required this.period, required this.priceCents});
+
+  final Ai68PlanPeriod period;
+  final int priceCents;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        border: Border.all(color: context.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.sell_outlined,
+            size: 17,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 7),
+          Text(
+            '${_periodText(context, period)} · ${_formatMoney(context, priceCents)}',
+            style: context.textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Ai68PlanDescription extends StatelessWidget {
+  const _Ai68PlanDescription({super.key, required this.content});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = _parsePlanContent(content);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: lines.map((line) {
+        return switch (line.type) {
+          _Ai68PlanContentType.heading => Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 8),
+            child: Text(line.text, style: context.textTheme.titleSmall),
+          ),
+          _Ai68PlanContentType.item => Padding(
+            padding: const EdgeInsets.only(bottom: 7),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.check_circle_outline,
+                    size: 17,
+                    color: context.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    line.text,
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _Ai68PlanContentType.paragraph => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              line.text,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        };
+      }).toList(growable: false),
     );
   }
 }
@@ -824,40 +1056,52 @@ class _Ai68CreateOrderDialogState extends State<_Ai68CreateOrderDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.appLocalizations;
+    final availableWidth = max(0.0, MediaQuery.sizeOf(context).width - 80);
     return AlertDialog(
       title: Text(widget.plan.name),
       content: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<Ai68PlanPeriod>(
-              initialValue: _period,
-              decoration: InputDecoration(labelText: l10n.ai68Plan),
-              items: _periods.map((period) {
-                final price = widget.plan.pricesCents[period] ?? 0;
-                return DropdownMenuItem(
-                  value: period,
-                  child: Text(
-                    '${_periodText(context, period)} · ${_formatMoney(context, price)}',
-                  ),
-                );
-              }).toList(),
-              onChanged: (period) {
-                if (period != null) {
-                  setState(() => _period = period);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _couponController,
-              decoration: InputDecoration(
-                labelText: l10n.ai68CouponCode,
-                prefixIcon: const Icon(Icons.discount_outlined),
+        width: min(520.0, availableWidth),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Ai68PlanMetrics(plan: widget.plan),
+              if (_parsePlanContent(widget.plan.content).isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _Ai68PlanDescription(content: widget.plan.content!),
+              ],
+              const SizedBox(height: 16),
+              Divider(color: context.colorScheme.outlineVariant),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<Ai68PlanPeriod>(
+                initialValue: _period,
+                decoration: InputDecoration(labelText: l10n.ai68Plan),
+                items: _periods.map((period) {
+                  final price = widget.plan.pricesCents[period] ?? 0;
+                  return DropdownMenuItem(
+                    value: period,
+                    child: Text(
+                      '${_periodText(context, period)} · ${_formatMoney(context, price)}',
+                    ),
+                  );
+                }).toList(),
+                onChanged: (period) {
+                  if (period != null) {
+                    setState(() => _period = period);
+                  }
+                },
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _couponController,
+                decoration: InputDecoration(
+                  labelText: l10n.ai68CouponCode,
+                  prefixIcon: const Icon(Icons.discount_outlined),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -953,6 +1197,83 @@ String _periodText(BuildContext context, Ai68PlanPeriod period) {
     Ai68PlanPeriod.onetime => l10n.ai68OneTime,
     Ai68PlanPeriod.resetTraffic => l10n.ai68ResetTraffic,
   };
+}
+
+String _formatPlanSpeed(double? speed) {
+  if (speed == null) return '∞';
+  return speed == speed.roundToDouble()
+      ? speed.toInt().toString()
+      : speed.toStringAsFixed(1);
+}
+
+enum _Ai68PlanContentType { heading, item, paragraph }
+
+final class _Ai68PlanContentLine {
+  const _Ai68PlanContentLine({required this.type, required this.text});
+
+  final _Ai68PlanContentType type;
+  final String text;
+}
+
+List<_Ai68PlanContentLine> _parsePlanContent(String? content) {
+  if (content == null || content.trim().isEmpty) return const [];
+  final normalized = content
+      .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+      .replaceAll(RegExp(r'</(?:p|div|li|h[1-6])>', caseSensitive: false), '\n')
+      .replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '- ')
+      .replaceAll(RegExp('<[^>]*>'), '');
+  final lines = <_Ai68PlanContentLine>[];
+  for (final rawLine in normalized.split(RegExp(r'\r?\n'))) {
+    var line = _decodePlanText(rawLine.trim());
+    if (line.isEmpty) continue;
+    final heading = RegExp(r'^#{1,6}\s+').firstMatch(line);
+    if (heading != null) {
+      line = line.substring(heading.end).trim();
+      if (line.isNotEmpty) {
+        lines.add(
+          _Ai68PlanContentLine(
+            type: _Ai68PlanContentType.heading,
+            text: line,
+          ),
+        );
+      }
+      continue;
+    }
+    final item = RegExp(r'^(?:[-*+]\s+|\d+[.)]\s+)').firstMatch(line);
+    if (item != null) {
+      line = line.substring(item.end).trim();
+      if (line.isNotEmpty) {
+        lines.add(
+          _Ai68PlanContentLine(
+            type: _Ai68PlanContentType.item,
+            text: line,
+          ),
+        );
+      }
+      continue;
+    }
+    lines.add(
+      _Ai68PlanContentLine(
+        type: _Ai68PlanContentType.paragraph,
+        text: line,
+      ),
+    );
+  }
+  return lines;
+}
+
+String _decodePlanText(String value) {
+  return value
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#39;', "'")
+      .replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1')
+      .replaceAll(RegExp(r'__([^_]+)__'), r'$1')
+      .replaceAll(RegExp(r'`([^`]+)`'), r'$1')
+      .trim();
 }
 
 String _plainText(String value) {
