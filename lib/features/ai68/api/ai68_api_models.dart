@@ -59,6 +59,16 @@ final class Ai68Json {
     if (value is! List) return const [];
     return value.map((item) => item.toString()).toList(growable: false);
   }
+
+  static List<String> stringList(Object? value) {
+    if (value is List) return strings(value);
+    if (value is! String) return const [];
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
+  }
 }
 
 final class Ai68GuestConfig {
@@ -85,9 +95,7 @@ final class Ai68GuestConfig {
       isInviteForce: Ai68Json.boolean(json['is_invite_force']),
       isCaptcha: Ai68Json.boolean(json['is_captcha']),
       captchaType: Ai68Json.optionalString(json['captcha_type']) ?? 'recaptcha',
-      emailWhitelistSuffixes: suffixes is List
-          ? Ai68Json.strings(suffixes)
-          : const [],
+      emailWhitelistSuffixes: Ai68Json.stringList(suffixes),
       tosUrl: Ai68Json.optionalString(json['tos_url']),
       recaptchaSiteKey: Ai68Json.optionalString(json['recaptcha_site_key']),
       recaptchaV3SiteKey: Ai68Json.optionalString(
@@ -373,6 +381,11 @@ final class Ai68Subscription {
   final Ai68Plan? plan;
 
   int get usedBytes => uploadBytes + downloadBytes;
+
+  int get remainingBytes {
+    if (transferEnableBytes <= 0) return 0;
+    return (transferEnableBytes - usedBytes).clamp(0, transferEnableBytes);
+  }
 }
 
 enum Ai68OrderStatus {

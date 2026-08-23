@@ -12,14 +12,19 @@ class SubscriptionInfoView extends StatelessWidget {
     if (subscriptionInfo == null) {
       return Container();
     }
-    if (subscriptionInfo?.total == 0) {
+    if (subscriptionInfo!.total <= 0) {
       return Container();
     }
-    final use = subscriptionInfo!.upload + subscriptionInfo!.download;
+    final use = (subscriptionInfo!.upload + subscriptionInfo!.download).clamp(
+      0,
+      double.infinity,
+    );
     final total = subscriptionInfo!.total;
-    final progress = use / total;
+    final remaining = (total - use).clamp(0, total);
+    final progress = (use / total).clamp(0.0, 1.0);
 
     final useShow = use.traffic.show;
+    final remainingShow = remaining.traffic.show;
     final totalShow = total.traffic.show;
     final expireShow =
         subscriptionInfo?.expire != null && subscriptionInfo!.expire != 0
@@ -36,9 +41,23 @@ class SubscriptionInfoView extends StatelessWidget {
           backgroundColor: context.colorScheme.primary.opacity15,
         ),
         const SizedBox(height: 8),
-        Text(
-          '$useShow / $totalShow · $expireShow',
-          style: context.textTheme.labelMedium?.toLight,
+        Wrap(
+          spacing: 16,
+          runSpacing: 6,
+          children: [
+            Text(
+              '${context.appLocalizations.ai68UsedTraffic}: $useShow',
+              style: context.textTheme.labelMedium?.toLight,
+            ),
+            Text(
+              '${context.appLocalizations.ai68RemainingTraffic} / ${context.appLocalizations.ai68TotalTraffic}: $remainingShow / $totalShow',
+              style: context.textTheme.labelMedium?.toLight,
+            ),
+            Text(
+              '${context.appLocalizations.ai68ExpiresAt}: $expireShow',
+              style: context.textTheme.labelMedium?.toLight,
+            ),
+          ],
         ),
         const SizedBox(height: 4),
       ],

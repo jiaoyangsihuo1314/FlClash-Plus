@@ -16,6 +16,10 @@ import 'package:mocktail/mocktail.dart';
 import '../support/fakes.dart';
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(const Ai68CaptchaTokens());
+  });
+
   late _MockAi68Api api;
   late MemoryAi68TokenStore tokenStore;
   late _ControllableSetupAction setupAction;
@@ -183,6 +187,28 @@ void main() {
     expect(tokenStore.session, isNull);
     expect(tokenStore.clearCount, 1);
   });
+
+  test(
+    'email verification errors remain visible on the registration form',
+    () async {
+      when(
+        () => api.sendEmailVerification(
+          email: 'user@example.com',
+          captchaTokens: any(named: 'captchaTokens'),
+        ),
+      ).thenThrow(const Ai68ApiException(message: 'Email delivery failed'));
+
+      await expectLater(
+        controller.sendEmailVerification('user@example.com'),
+        throwsA(isA<Ai68ApiException>()),
+      );
+
+      expect(
+        container.read(ai68CommercialProvider).errorMessage,
+        'Email delivery failed',
+      );
+    },
+  );
 
   test(
     'authentication failure during restore removes managed profile',

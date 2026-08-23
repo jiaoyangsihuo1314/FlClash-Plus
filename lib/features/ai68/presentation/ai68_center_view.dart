@@ -385,19 +385,48 @@ class _Ai68AccountTab extends StatelessWidget {
         LinearProgressIndicator(value: trafficRatio),
         const SizedBox(height: 10),
         Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: 16,
-          runSpacing: 6,
+          spacing: 24,
+          runSpacing: 10,
           children: [
-            Text(
-              '${l10n.ai68UsedTraffic}: ${_formatBytes(subscription?.usedBytes ?? 0)}',
+            _Ai68TrafficValue(
+              label: l10n.ai68UsedTraffic,
+              value: _formatBytes(subscription?.usedBytes ?? 0),
             ),
-            Text(
-              '${l10n.ai68RemainingTraffic}: ${_formatBytes(state.remainingBytes)}',
+            _Ai68TrafficValue(
+              label: '${l10n.ai68RemainingTraffic} / ${l10n.ai68TotalTraffic}',
+              value:
+                  '${_formatBytes(state.remainingBytes)} / ${_formatBytes(subscription?.transferEnableBytes ?? 0)}',
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _Ai68TrafficValue extends StatelessWidget {
+  const _Ai68TrafficValue({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 180),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: context.textTheme.labelMedium?.copyWith(
+              color: context.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(value, style: context.textTheme.titleSmall),
+        ],
+      ),
     );
   }
 }
@@ -734,48 +763,50 @@ class _Ai68PlanDescription extends StatelessWidget {
     final lines = _parsePlanContent(content);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: lines.map((line) {
-        return switch (line.type) {
-          _Ai68PlanContentType.heading => Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 8),
-            child: Text(line.text, style: context.textTheme.titleSmall),
-          ),
-          _Ai68PlanContentType.item => Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
-                    Icons.check_circle_outline,
-                    size: 17,
-                    color: context.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    line.text,
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      color: context.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _Ai68PlanContentType.paragraph => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              line.text,
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: context.colorScheme.onSurfaceVariant,
+      children: lines
+          .map((line) {
+            return switch (line.type) {
+              _Ai68PlanContentType.heading => Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 8),
+                child: Text(line.text, style: context.textTheme.titleSmall),
               ),
-            ),
-          ),
-        };
-      }).toList(growable: false),
+              _Ai68PlanContentType.item => Padding(
+                padding: const EdgeInsets.only(bottom: 7),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.check_circle_outline,
+                        size: 17,
+                        color: context.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        line.text,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _Ai68PlanContentType.paragraph => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  line.text,
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: context.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            };
+          })
+          .toList(growable: false),
     );
   }
 }
@@ -1231,10 +1262,7 @@ List<_Ai68PlanContentLine> _parsePlanContent(String? content) {
       line = line.substring(heading.end).trim();
       if (line.isNotEmpty) {
         lines.add(
-          _Ai68PlanContentLine(
-            type: _Ai68PlanContentType.heading,
-            text: line,
-          ),
+          _Ai68PlanContentLine(type: _Ai68PlanContentType.heading, text: line),
         );
       }
       continue;
@@ -1244,19 +1272,13 @@ List<_Ai68PlanContentLine> _parsePlanContent(String? content) {
       line = line.substring(item.end).trim();
       if (line.isNotEmpty) {
         lines.add(
-          _Ai68PlanContentLine(
-            type: _Ai68PlanContentType.item,
-            text: line,
-          ),
+          _Ai68PlanContentLine(type: _Ai68PlanContentType.item, text: line),
         );
       }
       continue;
     }
     lines.add(
-      _Ai68PlanContentLine(
-        type: _Ai68PlanContentType.paragraph,
-        text: line,
-      ),
+      _Ai68PlanContentLine(type: _Ai68PlanContentType.paragraph, text: line),
     );
   }
   return lines;

@@ -90,10 +90,7 @@ final class Ai68CommercialState {
   int get remainingBytes {
     final value = subscription;
     if (value == null) return 0;
-    return (value.transferEnableBytes - value.usedBytes).clamp(
-      0,
-      value.transferEnableBytes,
-    );
+    return value.remainingBytes;
   }
 
   Ai68CommercialState copyWith({
@@ -311,10 +308,28 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     String email, {
     Ai68CaptchaTokens captchaTokens = const Ai68CaptchaTokens(),
   }) async {
-    await _api.sendEmailVerification(
-      email: email,
-      captchaTokens: captchaTokens,
-    );
+    state = state.copyWith(errorMessage: null);
+    try {
+      await _api.sendEmailVerification(
+        email: email,
+        captchaTokens: captchaTokens,
+      );
+    } catch (error) {
+      state = state.copyWith(errorMessage: _messageFor(error));
+      rethrow;
+    }
+  }
+
+  Future<Ai68GuestConfig?> refreshGuestConfig() async {
+    state = state.copyWith(errorMessage: null);
+    try {
+      final config = await _api.fetchGuestConfig();
+      state = state.copyWith(guestConfig: config);
+      return config;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _messageFor(error));
+      return null;
+    }
   }
 
   Future<void> logout() {

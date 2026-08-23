@@ -105,6 +105,24 @@ void main() {
     });
   });
 
+  test('guest config accepts comma-separated email suffixes', () async {
+    adapter.enqueue(<String, dynamic>{
+      'status': 'success',
+      'message': 'ok',
+      'data': <String, dynamic>{
+        'is_email_verify': 1,
+        'is_invite_force': 0,
+        'is_captcha': 0,
+        'email_whitelist_suffix': 'example.com, ai68ai.cn',
+      },
+      'error': null,
+    });
+
+    final config = await api.fetchGuestConfig();
+
+    expect(config.emailWhitelistSuffixes, <String>['example.com', 'ai68ai.cn']);
+  });
+
   test(
     'protected requests use auth_data and never subscription token',
     () async {
@@ -348,11 +366,25 @@ void main() {
     final traffic = await api.fetchTrafficLogs();
 
     expect(subscription.usedBytes, 350);
+    expect(subscription.remainingBytes, 10737417890);
     expect(subscription.transferEnableBytes, 10737418240);
     expect(plans.single.pricesCents[Ai68PlanPeriod.month], 1000);
     expect(plans.single.transferEnableGb, 10);
     expect(traffic.single.downloadBytes, 20);
     expect(traffic.single.serverRate, 1.5);
+  });
+
+  test('subscription remaining traffic never becomes negative', () {
+    final subscription = Ai68Subscription(
+      subscriptionToken: 'subscription-secret',
+      subscribeUrl: Uri.parse('https://example.com/s/subscription-secret'),
+      uploadBytes: 800,
+      downloadBytes: 700,
+      transferEnableBytes: 1000,
+    );
+
+    expect(subscription.usedBytes, 1500);
+    expect(subscription.remainingBytes, 0);
   });
 }
 

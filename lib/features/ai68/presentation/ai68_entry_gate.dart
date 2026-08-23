@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/features/ai68/api/ai68_api_models.dart';
 import 'package:fl_clash/features/ai68/commercial/ai68_commercial_controller.dart';
@@ -336,27 +338,51 @@ class Ai68RegisterPage extends ConsumerStatefulWidget {
 
 class _Ai68RegisterPageState extends ConsumerState<Ai68RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _emailFieldKey = GlobalKey<FormFieldState<String>>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _inviteController = TextEditingController();
   final _emailCodeController = TextEditingController();
   final _captchaController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _sendingCode = false;
+  bool _loadingGuestConfig = false;
+  int _codeCooldown = 0;
+  Timer? _codeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshGuestConfig();
+    });
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _inviteController.dispose();
     _emailCodeController.dispose();
     _captchaController.dispose();
+    _codeTimer?.cancel();
     super.dispose();
   }
 
+  Future<void> _refreshGuestConfig() async {
+    if (_loadingGuestConfig) return;
+    setState(() => _loadingGuestConfig = true);
+    await ref.read(ai68CommercialProvider.notifier).refreshGuestConfig();
+    if (mounted) setState(() => _loadingGuestConfig = false);
+  }
+
   Future<void> _sendCode() async {
-    if (!_emailController.text.contains('@')) return;
+    if (_emailFieldKey.currentState?.validate() != true) return;
     final config = ref.read(ai68CommercialProvider).guestConfig;
+    if (config?.isEmailVerify != true || _codeCooldown > 0) return;
     final captchaTokens = _captchaTokens(config);
     if (config?.isCaptcha == true && _captchaController.text.trim().isEmpty) {
       return;
@@ -369,14 +395,36 @@ class _Ai68RegisterPageState extends ConsumerState<Ai68RegisterPage> {
             _emailController.text.trim(),
             captchaTokens: captchaTokens,
           );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.appLocalizations.ai68EmailCodeSent)),
+      );
+      _startCodeCooldown();
+    } catch (_) {
+      return;
     } finally {
       if (mounted) setState(() => _sendingCode = false);
     }
   }
 
+  void _startCodeCooldown() {
+    _codeTimer?.cancel();
+    setState(() => _codeCooldown = 60);
+    _codeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _codeCooldown <= 1) {
+        timer.cancel();
+        if (mounted) setState(() => _codeCooldown = 0);
+        return;
+      }
+      setState(() => _codeCooldown -= 1);
+    });
+  }
+
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() != true) return;
+    FocusScope.of(context).unfocus();
     final config = ref.read(ai68CommercialProvider).guestConfig;
+    if (config == null) return;
     final captchaTokens = _captchaTokens(config);
     try {
       await ref
@@ -410,6 +458,27 @@ class _Ai68RegisterPageState extends ConsumerState<Ai68RegisterPage> {
     );
   }
 
+  String? _validateEmail(String? value, Ai68GuestConfig config) {
+    final email = value?.trim() ?? '';
+    final isValid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    if (!isValid) return context.appLocalizations.ai68EmailInvalid;
+    final suffixes = config.emailWhitelistSuffixes
+        .map(
+          (suffix) =>
+              suffix.trim().toLowerCase().replaceFirst(RegExp(r'^@'), ''),
+        )
+        .where((suffix) => suffix.isNotEmpty)
+        .toSet();
+    if (suffixes.isEmpty) return null;
+    final domain = email.split('@').last.toLowerCase();
+    if (!suffixes.contains(domain)) {
+      return context.appLocalizations.ai68EmailDomainRestricted(
+        suffixes.join(', '),
+      );
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.appLocalizations;
@@ -418,126 +487,199 @@ class _Ai68RegisterPageState extends ConsumerState<Ai68RegisterPage> {
     return _Ai68AuthScaffold(
       title: l10n.ai68CreateAccount,
       onBack: widget.onBack,
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n.ai68Email,
-                prefixIcon: const Icon(Icons.alternate_email),
-              ),
-              validator: (value) {
-                return value != null && value.contains('@')
-                    ? null
-                    : l10n.ai68Email;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n.ai68Password,
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+      child: config == null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_loadingGuestConfig) const LinearProgressIndicator(),
+                if (state.errorMessage != null) ...[
+                  Text(
+                    state.errorMessage!,
+                    style: TextStyle(color: context.colorScheme.error),
                   ),
+                  const SizedBox(height: 16),
+                ],
+                OutlinedButton.icon(
+                  onPressed: _loadingGuestConfig ? null : _refreshGuestConfig,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.ai68LoadRegistrationSettings),
+                ),
+              ],
+            )
+          : AutofillGroup(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      key: _emailFieldKey,
+                      controller: _emailController,
+                      autofillHints: const [AutofillHints.email],
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: l10n.ai68Email,
+                        prefixIcon: const Icon(Icons.alternate_email),
+                      ),
+                      validator: (value) => _validateEmail(value, config),
+                    ),
+                    if (config.isEmailVerify) ...[
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailCodeController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          labelText: l10n.ai68EmailCode,
+                          prefixIcon: const Icon(
+                            Icons.mark_email_read_outlined,
+                          ),
+                          suffixIcon: TextButton(
+                            onPressed: _sendingCode || _codeCooldown > 0
+                                ? null
+                                : _sendCode,
+                            child: Text(
+                              _codeCooldown > 0
+                                  ? l10n.ai68ResendCode(_codeCooldown)
+                                  : l10n.ai68SendCode,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          return value == null || value.trim().isEmpty
+                              ? l10n.ai68EmailCode
+                              : null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      autofillHints: const [AutofillHints.newPassword],
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: l10n.ai68Password,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
+                          },
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        return value != null && value.length >= 8
+                            ? null
+                            : l10n.ai68PasswordRequirement;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      autofillHints: const [AutofillHints.newPassword],
+                      obscureText: _obscureConfirmPassword,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: l10n.ai68ConfirmPassword,
+                        prefixIcon: const Icon(Icons.lock_reset_outlined),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(
+                              () => _obscureConfirmPassword =
+                                  !_obscureConfirmPassword,
+                            );
+                          },
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return l10n.ai68ConfirmPassword;
+                        }
+                        return value == _passwordController.text
+                            ? null
+                            : l10n.ai68PasswordMismatch;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _inviteController,
+                      textInputAction: config.isCaptcha
+                          ? TextInputAction.next
+                          : TextInputAction.done,
+                      decoration: InputDecoration(
+                        labelText: config.isInviteForce
+                            ? l10n.ai68InviteCode
+                            : '${l10n.ai68InviteCode} (${l10n.ai68Optional})',
+                        prefixIcon: const Icon(Icons.card_giftcard),
+                      ),
+                      validator: (value) {
+                        if (!config.isInviteForce) return null;
+                        return value == null || value.trim().isEmpty
+                            ? l10n.ai68InviteCode
+                            : null;
+                      },
+                    ),
+                    if (config.isCaptcha) ...[
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _captchaController,
+                        textInputAction: TextInputAction.done,
+                        decoration: InputDecoration(
+                          labelText: config.captchaType,
+                          prefixIcon: const Icon(Icons.verified_user_outlined),
+                        ),
+                        validator: (value) {
+                          return value == null || value.trim().isEmpty
+                              ? config.captchaType
+                              : null;
+                        },
+                      ),
+                    ],
+                    if (state.errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        state.errorMessage!,
+                        style: TextStyle(color: context.colorScheme.error),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: state.isAuthenticating ? null : _submit,
+                        icon: state.isAuthenticating
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.person_add_alt_1),
+                        label: Text(l10n.ai68Register),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: state.isAuthenticating ? null : widget.onBack,
+                      child: Text(l10n.ai68BackToLogin),
+                    ),
+                  ],
                 ),
               ),
-              validator: (value) {
-                return value != null && value.length >= 8
-                    ? null
-                    : l10n.ai68Password;
-              },
             ),
-            if (config?.isInviteForce == true) ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _inviteController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.ai68InviteCode,
-                  prefixIcon: const Icon(Icons.card_giftcard),
-                ),
-                validator: (value) {
-                  return value == null || value.trim().isEmpty
-                      ? l10n.ai68InviteCode
-                      : null;
-                },
-              ),
-            ],
-            if (config?.isEmailVerify == true) ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailCodeController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.ai68EmailCode,
-                  prefixIcon: const Icon(Icons.mark_email_read_outlined),
-                  suffixIcon: TextButton(
-                    onPressed: _sendingCode ? null : _sendCode,
-                    child: Text(l10n.ai68SendCode),
-                  ),
-                ),
-                validator: (value) {
-                  return value == null || value.trim().isEmpty
-                      ? l10n.ai68EmailCode
-                      : null;
-                },
-              ),
-            ],
-            if (config?.isCaptcha == true) ...[
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _captchaController,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: config?.captchaType,
-                  prefixIcon: const Icon(Icons.verified_user_outlined),
-                ),
-                validator: (value) {
-                  return value == null || value.trim().isEmpty
-                      ? config?.captchaType
-                      : null;
-                },
-              ),
-            ],
-            if (state.errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                state.errorMessage!,
-                style: TextStyle(color: context.colorScheme.error),
-              ),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 48,
-              child: FilledButton.icon(
-                onPressed: state.isAuthenticating ? null : _submit,
-                icon: const Icon(Icons.person_add_alt_1),
-                label: Text(l10n.ai68Register),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: state.isAuthenticating ? null : widget.onBack,
-              child: Text(l10n.ai68BackToLogin),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -4604,6 +4604,61 @@ class AppLocalizations {
     return Intl.message('Password', name: 'ai68Password', desc: '', args: []);
   }
 
+  /// `Confirm password`
+  String get ai68ConfirmPassword {
+    return Intl.message(
+      'Confirm password',
+      name: 'ai68ConfirmPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The passwords do not match`
+  String get ai68PasswordMismatch {
+    return Intl.message(
+      'The passwords do not match',
+      name: 'ai68PasswordMismatch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Password must contain at least 8 characters`
+  String get ai68PasswordRequirement {
+    return Intl.message(
+      'Password must contain at least 8 characters',
+      name: 'ai68PasswordRequirement',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter a valid email address`
+  String get ai68EmailInvalid {
+    return Intl.message(
+      'Enter a valid email address',
+      name: 'ai68EmailInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Allowed email domains: {domains}`
+  String ai68EmailDomainRestricted(Object domains) {
+    return Intl.message(
+      'Allowed email domains: $domains',
+      name: 'ai68EmailDomainRestricted',
+      desc: '',
+      args: [domains],
+    );
+  }
+
+  /// `optional`
+  String get ai68Optional {
+    return Intl.message('optional', name: 'ai68Optional', desc: '', args: []);
+  }
+
   /// `Sign in`
   String get ai68Login {
     return Intl.message('Sign in', name: 'ai68Login', desc: '', args: []);
@@ -4657,6 +4712,36 @@ class AppLocalizations {
   /// `Send code`
   String get ai68SendCode {
     return Intl.message('Send code', name: 'ai68SendCode', desc: '', args: []);
+  }
+
+  /// `Resend in {seconds}s`
+  String ai68ResendCode(Object seconds) {
+    return Intl.message(
+      'Resend in ${seconds}s',
+      name: 'ai68ResendCode',
+      desc: '',
+      args: [seconds],
+    );
+  }
+
+  /// `Verification code sent`
+  String get ai68EmailCodeSent {
+    return Intl.message(
+      'Verification code sent',
+      name: 'ai68EmailCodeSent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reload registration settings`
+  String get ai68LoadRegistrationSettings {
+    return Intl.message(
+      'Reload registration settings',
+      name: 'ai68LoadRegistrationSettings',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Account`
@@ -4797,6 +4882,11 @@ class AppLocalizations {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Total`
+  String get ai68TotalTraffic {
+    return Intl.message('Total', name: 'ai68TotalTraffic', desc: '', args: []);
   }
 
   /// `Expires`
