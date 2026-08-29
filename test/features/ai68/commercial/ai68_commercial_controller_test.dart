@@ -78,6 +78,34 @@ void main() {
       () => api.fetchNotices(page: any(named: 'page')),
     ).thenAnswer((_) async => const Ai68NoticePage(items: [], total: 0));
     when(api.fetchServers).thenAnswer((_) async => const []);
+    when(api.fetchUserConfig).thenAnswer(
+      (_) async => const Ai68UserConfig(
+        withdrawMethods: ['Alipay'],
+        withdrawClosed: false,
+        currency: 'CNY',
+        currencySymbol: '¥',
+        commissionDistributionEnabled: false,
+        commissionDistributionRates: [0, 0, 0],
+      ),
+    );
+    when(api.fetchInviteOverview).thenAnswer(
+      (_) async => const Ai68InviteOverview(
+        codes: [],
+        stats: Ai68InviteStats(
+          registeredUsers: 0,
+          cumulativeCommissionCents: 0,
+          pendingCommissionCents: 0,
+          commissionRate: 10,
+          availableCommissionCents: 0,
+        ),
+      ),
+    );
+    when(
+      () => api.fetchCommissionLogs(
+        page: any(named: 'page'),
+        pageSize: any(named: 'pageSize'),
+      ),
+    ).thenAnswer((_) async => const Ai68CommissionPage(items: [], total: 0));
 
     container = ProviderContainer(
       overrides: [
@@ -234,6 +262,55 @@ void main() {
       expect(profileSynchronizer.clearCount, 1);
     },
   );
+
+  test('generates invitation codes and transfers commission', () async {
+    var overview = const Ai68InviteOverview(
+      codes: [],
+      stats: Ai68InviteStats(
+        registeredUsers: 1,
+        cumulativeCommissionCents: 500,
+        pendingCommissionCents: 100,
+        commissionRate: 10,
+        availableCommissionCents: 500,
+      ),
+    );
+    when(api.generateInviteCode).thenAnswer((_) async {
+      overview = Ai68InviteOverview(
+        codes: const [Ai68InviteCode(code: 'INVITE68', views: 0, used: false)],
+        stats: overview.stats,
+      );
+    });
+    when(api.fetchInviteOverview).thenAnswer((_) async => overview);
+    when(() => api.transferCommission(200)).thenAnswer((_) async {
+      overview = const Ai68InviteOverview(
+        codes: [Ai68InviteCode(code: 'INVITE68', views: 0, used: false)],
+        stats: Ai68InviteStats(
+          registeredUsers: 1,
+          cumulativeCommissionCents: 500,
+          pendingCommissionCents: 100,
+          commissionRate: 10,
+          availableCommissionCents: 300,
+        ),
+      );
+    });
+
+    expect(await controller.generateInviteCode(), isTrue);
+    expect(
+      container.read(ai68CommercialProvider).inviteOverview?.codes.single.code,
+      'INVITE68',
+    );
+    expect(await controller.transferCommission(200), isTrue);
+    expect(
+      container
+          .read(ai68CommercialProvider)
+          .inviteOverview
+          ?.stats
+          .availableCommissionCents,
+      300,
+    );
+    verify(api.generateInviteCode).called(1);
+    verify(() => api.transferCommission(200)).called(1);
+  });
 }
 
 final class _MockAi68Api extends Mock implements Ai68Api {}

@@ -286,8 +286,10 @@ jobs:
           expected_version_name="${package_version%%+*}"
           expected_version_code="${package_version#*+}"
           expected_package='cn.ai68.flclashplus'
+          expected_label='FlClash Plus'
           if [[ "$ANDROID_PACKAGE_MODE" == 'test' ]]; then
             expected_package='cn.ai68.flclashplus.dev'
+            expected_label='FlClash Plus Test'
           fi
           expected_cert="$(printf '%s' "$SIGNING_CERT_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
           expected_build_sha="${GITHUB_SHA:0:8}"
@@ -323,11 +325,14 @@ jobs:
             grep -F 'Welcome to FlClash Plus' "$app_strings" > /dev/null
             grep -F 'passport/auth/login' "$app_strings" > /dev/null
             grep -F "$expected_build_sha" "$app_strings" > /dev/null
+            resource_strings="$(mktemp)"
+            unzip -p "$apk" resources.arsc | strings > "$resource_strings"
+            grep -Fx "$expected_label" "$resource_strings" > /dev/null
           done
           for bundle in "${bundles[@]}"; do
             printf '%s\n' "$bundle"
             if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
-              jarsigner -verify "$bundle"
+              jarsigner -verify -strict "$bundle"
               bundle_cert="$(keytool -printcert -jarfile "$bundle" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
               test "$bundle_cert" = "$expected_cert"
               [[ "$(basename "$bundle")" != *-test-* ]]
@@ -741,10 +746,15 @@ jobs:
         working-directory: release
         run: sha256sum ./* > SHA256SUMS
 
+      - name: Prepare release metadata
+        id: metadata
+        shell: bash
+        run: echo "title=FlClash Plus V${GITHUB_REF_NAME#plus-v}" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          name: FlClash Plus ${{ github.ref_name }}
+          name: ${{ steps.metadata.outputs.title }}
           files: release/*
           fail_on_unmatched_files: true
           generate_release_notes: true

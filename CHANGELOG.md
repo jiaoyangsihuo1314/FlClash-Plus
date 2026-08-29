@@ -1,3 +1,9 @@
+## v3.0.0
+
+- Add My Invitation to the AI68 center on Android, Windows, and macOS
+
+- Sync invitation codes, commission statistics, transfers, withdrawals, and payout records with Xboard
+
 ## v0.8.96
 
 - Optimize commented policy

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/features/ai68/api/ai68_api_client.dart';
 import 'package:fl_clash/features/ai68/api/ai68_api_models.dart';
 import 'package:fl_clash/features/ai68/commercial/ai68_commercial_controller.dart';
 import 'package:fl_clash/features/ai68/connect/ai68_smart_connect.dart';
@@ -8,6 +9,7 @@ import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Ai68CenterView extends ConsumerStatefulWidget {
@@ -32,7 +34,7 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
     }
     final l10n = context.appLocalizations;
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: CommonScaffold(
         title: l10n.ai68Center,
         isLoading: state.isRefreshing,
@@ -69,6 +71,10 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
                   icon: const Icon(Icons.receipt_long),
                   text: l10n.ai68Orders,
                 ),
+                Tab(
+                  icon: const Icon(Icons.card_giftcard),
+                  text: l10n.ai68MyInvites,
+                ),
                 Tab(icon: const Icon(Icons.public), text: l10n.ai68Nodes),
                 Tab(
                   icon: const Icon(Icons.notifications),
@@ -82,6 +88,7 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
                   _Ai68AccountTab(state: state),
                   _Ai68PlansTab(state: state, onBuy: _buyPlan),
                   _Ai68OrdersTab(state: state, onPay: _payOrder),
+                  _Ai68InviteTab(state: state),
                   _Ai68NodesTab(
                     state: state,
                     selectedRegion: _nodeRegion,
@@ -480,6 +487,454 @@ class _Ai68MetricCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _Ai68InviteTab extends ConsumerWidget {
+  const _Ai68InviteTab({required this.state});
+
+  final Ai68CommercialState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.appLocalizations;
+    final overview = state.inviteOverview;
+    if (overview == null) {
+      return _Ai68EmptyState(
+        icon: Icons.card_giftcard,
+        text: l10n.ai68NoInviteData,
+      );
+    }
+    final config = state.userConfig;
+    final stats = overview.stats;
+    final currencySymbol = config?.currencySymbol ?? '¥';
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        CommonCard(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 24,
+              runSpacing: 16,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatMoney(
+                        context,
+                        stats.availableCommissionCents,
+                        symbol: currencySymbol,
+                      ),
+                      style: context.textTheme.headlineMedium?.copyWith(
+                        color: context.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.ai68AvailableCommission,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: state.isInviting
+                          ? null
+                          : () => _transfer(context, ref, stats),
+                      icon: const Icon(Icons.swap_horiz),
+                      label: Text(l10n.ai68Transfer),
+                    ),
+                    if (config != null &&
+                        !config.withdrawClosed &&
+                        config.withdrawMethods.isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: state.isInviting
+                            ? null
+                            : () => _withdraw(context, ref, config),
+                        icon: const Icon(Icons.account_balance_outlined),
+                        label: Text(l10n.ai68Withdraw),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _Ai68MetricCard(
+              icon: Icons.group_outlined,
+              label: l10n.ai68RegisteredUsers,
+              value: l10n.ai68People(stats.registeredUsers),
+            ),
+            _Ai68MetricCard(
+              icon: Icons.percent,
+              label: l10n.ai68CommissionRate,
+              value: _commissionRate(config, stats),
+            ),
+            _Ai68MetricCard(
+              icon: Icons.hourglass_top,
+              label: l10n.ai68PendingCommission,
+              value: _formatMoney(
+                context,
+                stats.pendingCommissionCents,
+                symbol: currencySymbol,
+              ),
+            ),
+            _Ai68MetricCard(
+              icon: Icons.savings_outlined,
+              label: l10n.ai68CumulativeCommission,
+              value: _formatMoney(
+                context,
+                stats.cumulativeCommissionCents,
+                symbol: currencySymbol,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _Ai68InviteSectionHeader(
+          title: l10n.ai68InviteCodeManagement,
+          action: FilledButton.icon(
+            onPressed: state.isInviting
+                ? null
+                : () => _generateCode(context, ref),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.ai68GenerateInviteCode),
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (overview.codes.isEmpty)
+          _Ai68EmptyState(
+            icon: Icons.card_giftcard,
+            text: l10n.ai68NoInviteCodes,
+          )
+        else
+          ...overview.codes.map(
+            (code) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: const Icon(Icons.confirmation_number_outlined),
+                title: SelectableText(code.code),
+                subtitle: Text(_formatEpoch(context, code.createdAt)),
+                trailing: IconButton(
+                  onPressed: () => _copyInviteLink(context, code.code),
+                  tooltip: l10n.ai68CopyInviteLink,
+                  icon: const Icon(Icons.content_copy),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
+        _Ai68InviteSectionHeader(title: l10n.ai68CommissionHistory),
+        const SizedBox(height: 8),
+        if (state.commissionLogs.isEmpty)
+          _Ai68EmptyState(
+            icon: Icons.receipt_long_outlined,
+            text: l10n.ai68NoCommissionRecords,
+          )
+        else
+          ...state.commissionLogs.map(
+            (log) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: const Icon(Icons.payments_outlined),
+                title: Text(_formatEpoch(context, log.createdAt)),
+                subtitle: Text(l10n.ai68CommissionPaidAt),
+                trailing: Text(
+                  _formatMoney(
+                    context,
+                    log.amountCents,
+                    symbol: currencySymbol,
+                  ),
+                  style: context.textTheme.titleMedium?.copyWith(
+                    color: context.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (state.commissionLogs.length < state.commissionTotal)
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: state.isInviting
+                  ? null
+                  : () {
+                      ref
+                          .read(ai68CommercialProvider.notifier)
+                          .loadMoreCommissionLogs();
+                    },
+              icon: const Icon(Icons.expand_more),
+              label: Text(l10n.ai68LoadMore),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _commissionRate(Ai68UserConfig? config, Ai68InviteStats stats) {
+    if (config == null || !config.commissionDistributionEnabled) {
+      return '${stats.commissionRate}%';
+    }
+    return config.commissionDistributionRates
+        .map((rate) => '${rate * stats.commissionRate ~/ 100}%')
+        .join(' / ');
+  }
+
+  Future<void> _generateCode(BuildContext context, WidgetRef ref) async {
+    final created = await ref
+        .read(ai68CommercialProvider.notifier)
+        .generateInviteCode();
+    if (created && context.mounted) {
+      context.showSnackBar(context.appLocalizations.ai68InviteCodeCreated);
+    }
+  }
+
+  Future<void> _copyInviteLink(BuildContext context, String code) async {
+    final baseUrl = state.guestConfig?.appUrl ?? ai68ApiBaseUrl;
+    final normalized = baseUrl.replaceFirst(RegExp(r'/api/v1/?$'), '');
+    final link =
+        '${normalized.replaceFirst(RegExp(r'/$'), '')}'
+        '/#/register?code=${Uri.encodeComponent(code)}';
+    await Clipboard.setData(ClipboardData(text: link));
+    if (context.mounted) {
+      context.showSnackBar(context.appLocalizations.ai68CopySuccess);
+    }
+  }
+
+  Future<void> _transfer(
+    BuildContext context,
+    WidgetRef ref,
+    Ai68InviteStats stats,
+  ) async {
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (context) => _Ai68TransferDialog(
+        availableCents: stats.availableCommissionCents,
+        currencySymbol: state.userConfig?.currencySymbol ?? '¥',
+      ),
+    );
+    if (amount == null || !context.mounted) return;
+    final transferred = await ref
+        .read(ai68CommercialProvider.notifier)
+        .transferCommission(amount);
+    if (transferred && context.mounted) {
+      context.showSnackBar(context.appLocalizations.ai68TransferSuccess);
+    }
+  }
+
+  Future<void> _withdraw(
+    BuildContext context,
+    WidgetRef ref,
+    Ai68UserConfig config,
+  ) async {
+    final request = await showDialog<_Ai68WithdrawRequest>(
+      context: context,
+      builder: (context) =>
+          _Ai68WithdrawDialog(methods: config.withdrawMethods),
+    );
+    if (request == null || !context.mounted) return;
+    final submitted = await ref
+        .read(ai68CommercialProvider.notifier)
+        .withdrawCommission(method: request.method, account: request.account);
+    if (submitted && context.mounted) {
+      context.showSnackBar(context.appLocalizations.ai68WithdrawSubmitted);
+    }
+  }
+}
+
+class _Ai68InviteSectionHeader extends StatelessWidget {
+  const _Ai68InviteSectionHeader({required this.title, this.action});
+
+  final String title;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(title, style: context.textTheme.titleMedium)),
+        ?action,
+      ],
+    );
+  }
+}
+
+class _Ai68TransferDialog extends StatefulWidget {
+  const _Ai68TransferDialog({
+    required this.availableCents,
+    required this.currencySymbol,
+  });
+
+  final int availableCents;
+  final String currencySymbol;
+
+  @override
+  State<_Ai68TransferDialog> createState() => _Ai68TransferDialogState();
+}
+
+class _Ai68TransferDialogState extends State<_Ai68TransferDialog> {
+  final _controller = TextEditingController();
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.appLocalizations;
+    return AlertDialog(
+      title: Text(l10n.ai68TransferCommissionTitle),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.ai68TransferCommissionHint),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: l10n.ai68TransferAmount,
+                prefixText: widget.currencySymbol,
+                helperText: _formatMoney(
+                  context,
+                  widget.availableCents,
+                  symbol: widget.currencySymbol,
+                ),
+                errorText: _errorText,
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.confirm)),
+      ],
+    );
+  }
+
+  void _submit() {
+    final amount = double.tryParse(_controller.text.trim());
+    final cents = amount == null ? 0 : (amount * 100).round();
+    if (cents <= 0 || cents > widget.availableCents) {
+      setState(() {
+        _errorText = context.appLocalizations.ai68TransferAmountInvalid;
+      });
+      return;
+    }
+    Navigator.of(context).pop(cents);
+  }
+}
+
+final class _Ai68WithdrawRequest {
+  const _Ai68WithdrawRequest({required this.method, required this.account});
+
+  final String method;
+  final String account;
+}
+
+class _Ai68WithdrawDialog extends StatefulWidget {
+  const _Ai68WithdrawDialog({required this.methods});
+
+  final List<String> methods;
+
+  @override
+  State<_Ai68WithdrawDialog> createState() => _Ai68WithdrawDialogState();
+}
+
+class _Ai68WithdrawDialogState extends State<_Ai68WithdrawDialog> {
+  final _accountController = TextEditingController();
+  String? _method;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _accountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.appLocalizations;
+    return AlertDialog(
+      title: Text(l10n.ai68WithdrawCommissionTitle),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: _method,
+              decoration: InputDecoration(labelText: l10n.ai68WithdrawMethod),
+              hint: Text(l10n.ai68SelectWithdrawMethod),
+              items: widget.methods
+                  .map(
+                    (method) =>
+                        DropdownMenuItem(value: method, child: Text(method)),
+                  )
+                  .toList(),
+              onChanged: (method) => setState(() => _method = method),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _accountController,
+              decoration: InputDecoration(
+                labelText: l10n.ai68WithdrawAccount,
+                hintText: l10n.ai68WithdrawAccountHint,
+                errorText: _errorText,
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.confirm)),
+      ],
+    );
+  }
+
+  void _submit() {
+    final account = _accountController.text.trim();
+    if (_method == null || account.isEmpty) {
+      setState(() {
+        _errorText = context.appLocalizations.ai68WithdrawDetailsRequired;
+      });
+      return;
+    }
+    Navigator.of(
+      context,
+    ).pop(_Ai68WithdrawRequest(method: _method!, account: account));
   }
 }
 
@@ -1171,9 +1626,12 @@ String _formatBytes(int bytes) {
   return '${value.toStringAsFixed(digits)} ${units[unit]}';
 }
 
-String _formatMoney(BuildContext context, int cents) {
+String _formatMoney(BuildContext context, int cents, {String symbol = '¥'}) {
   final locale = Localizations.localeOf(context).toString();
-  return NumberFormat.currency(locale: locale, symbol: '¥').format(cents / 100);
+  return NumberFormat.currency(
+    locale: locale,
+    symbol: symbol,
+  ).format(cents / 100);
 }
 
 String _formatEpoch(BuildContext context, int? epoch) {

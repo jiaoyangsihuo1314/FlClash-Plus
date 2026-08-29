@@ -47,13 +47,18 @@ final class Ai68CommercialState {
     required this.orders,
     required this.notices,
     required this.servers,
+    required this.commissionLogs,
+    required this.commissionTotal,
     required this.selectedRegion,
     this.guestConfig,
+    this.userConfig,
     this.user,
     this.subscription,
+    this.inviteOverview,
     this.isRefreshing = false,
     this.isAuthenticating = false,
     this.isOrdering = false,
+    this.isInviting = false,
     this.errorMessage,
   });
 
@@ -65,22 +70,29 @@ final class Ai68CommercialState {
         orders: const [],
         notices: const [],
         servers: const [],
+        commissionLogs: const [],
+        commissionTotal: 0,
         selectedRegion: Ai68Region.automatic,
       );
 
   final Ai68CommercialPhase phase;
   final Ai68ConnectionStage connectionStage;
   final Ai68GuestConfig? guestConfig;
+  final Ai68UserConfig? userConfig;
   final Ai68User? user;
   final Ai68Subscription? subscription;
+  final Ai68InviteOverview? inviteOverview;
   final List<Ai68Plan> plans;
   final List<Ai68Order> orders;
   final List<Ai68Notice> notices;
   final List<Ai68Server> servers;
+  final List<Ai68CommissionLog> commissionLogs;
+  final int commissionTotal;
   final Ai68Region selectedRegion;
   final bool isRefreshing;
   final bool isAuthenticating;
   final bool isOrdering;
+  final bool isInviting;
   final String? errorMessage;
 
   bool get isAuthenticated {
@@ -97,16 +109,21 @@ final class Ai68CommercialState {
     Ai68CommercialPhase? phase,
     Ai68ConnectionStage? connectionStage,
     Object? guestConfig = _unsetAi68Value,
+    Object? userConfig = _unsetAi68Value,
     Object? user = _unsetAi68Value,
     Object? subscription = _unsetAi68Value,
+    Object? inviteOverview = _unsetAi68Value,
     List<Ai68Plan>? plans,
     List<Ai68Order>? orders,
     List<Ai68Notice>? notices,
     List<Ai68Server>? servers,
+    List<Ai68CommissionLog>? commissionLogs,
+    int? commissionTotal,
     Ai68Region? selectedRegion,
     bool? isRefreshing,
     bool? isAuthenticating,
     bool? isOrdering,
+    bool? isInviting,
     Object? errorMessage = _unsetAi68Value,
   }) {
     return Ai68CommercialState(
@@ -115,18 +132,27 @@ final class Ai68CommercialState {
       guestConfig: identical(guestConfig, _unsetAi68Value)
           ? this.guestConfig
           : guestConfig as Ai68GuestConfig?,
+      userConfig: identical(userConfig, _unsetAi68Value)
+          ? this.userConfig
+          : userConfig as Ai68UserConfig?,
       user: identical(user, _unsetAi68Value) ? this.user : user as Ai68User?,
       subscription: identical(subscription, _unsetAi68Value)
           ? this.subscription
           : subscription as Ai68Subscription?,
+      inviteOverview: identical(inviteOverview, _unsetAi68Value)
+          ? this.inviteOverview
+          : inviteOverview as Ai68InviteOverview?,
       plans: plans ?? this.plans,
       orders: orders ?? this.orders,
       notices: notices ?? this.notices,
       servers: servers ?? this.servers,
+      commissionLogs: commissionLogs ?? this.commissionLogs,
+      commissionTotal: commissionTotal ?? this.commissionTotal,
       selectedRegion: selectedRegion ?? this.selectedRegion,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
       isOrdering: isOrdering ?? this.isOrdering,
+      isInviting: isInviting ?? this.isInviting,
       errorMessage: identical(errorMessage, _unsetAi68Value)
           ? this.errorMessage
           : errorMessage as String?,
@@ -365,15 +391,27 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       final orders = await _loadOrders(state.orders);
       final notices = await _loadNotices(state.notices);
       final servers = await _loadServers(state.servers);
+      final userConfig = await _loadUserConfig(state.userConfig);
+      final inviteOverview = await _loadInviteOverview(state.inviteOverview);
+      final commissionPage = await _loadCommissionPage(
+        Ai68CommissionPage(
+          items: state.commissionLogs,
+          total: state.commissionTotal,
+        ),
+      );
       if (!_isCurrentSession(revision)) return;
       state = state.copyWith(
         phase: Ai68CommercialPhase.ready,
         user: user,
+        userConfig: userConfig,
         subscription: subscription,
+        inviteOverview: inviteOverview,
         plans: plans,
         orders: orders,
         notices: notices,
         servers: servers,
+        commissionLogs: commissionPage.items,
+        commissionTotal: commissionPage.total,
         isRefreshing: false,
       );
       if (!_canUseSubscription(subscription)) {
@@ -671,6 +709,112 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     }
   }
 
+  Future<bool> generateInviteCode() async {
+    final revision = _sessionRevision;
+    if (!_isCurrentSession(revision) || !state.isAuthenticated) return false;
+    state = state.copyWith(isInviting: true, errorMessage: null);
+    try {
+      await _api.generateInviteCode();
+      final overview = await _api.fetchInviteOverview();
+      if (!_isCurrentSession(revision)) return false;
+      state = state.copyWith(inviteOverview: overview, isInviting: false);
+      return true;
+    } catch (error) {
+      if (!_isCurrentSession(revision)) return false;
+      if (await _handleAuthenticationFailure(error, revision)) return false;
+      state = state.copyWith(
+        isInviting: false,
+        errorMessage: _messageFor(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> transferCommission(int amountCents) async {
+    final revision = _sessionRevision;
+    if (!_isCurrentSession(revision) || !state.isAuthenticated) return false;
+    state = state.copyWith(isInviting: true, errorMessage: null);
+    try {
+      await _api.transferCommission(amountCents);
+      final user = await _api.fetchUserInfo();
+      final overview = await _api.fetchInviteOverview();
+      if (!_isCurrentSession(revision)) return false;
+      state = state.copyWith(
+        user: user,
+        inviteOverview: overview,
+        isInviting: false,
+      );
+      return true;
+    } catch (error) {
+      if (!_isCurrentSession(revision)) return false;
+      if (await _handleAuthenticationFailure(error, revision)) return false;
+      state = state.copyWith(
+        isInviting: false,
+        errorMessage: _messageFor(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> withdrawCommission({
+    required String method,
+    required String account,
+  }) async {
+    final revision = _sessionRevision;
+    if (!_isCurrentSession(revision) || !state.isAuthenticated) return false;
+    state = state.copyWith(isInviting: true, errorMessage: null);
+    try {
+      await _api.withdrawCommission(method: method, account: account);
+      if (!_isCurrentSession(revision)) return false;
+      state = state.copyWith(isInviting: false);
+      return true;
+    } catch (error) {
+      if (!_isCurrentSession(revision)) return false;
+      if (await _handleAuthenticationFailure(error, revision)) return false;
+      state = state.copyWith(
+        isInviting: false,
+        errorMessage: _messageFor(error),
+      );
+      return false;
+    }
+  }
+
+  Future<void> loadMoreCommissionLogs() async {
+    const pageSize = 20;
+    final revision = _sessionRevision;
+    if (!_isCurrentSession(revision) ||
+        !state.isAuthenticated ||
+        state.isInviting ||
+        state.commissionLogs.length >= state.commissionTotal) {
+      return;
+    }
+    state = state.copyWith(isInviting: true, errorMessage: null);
+    try {
+      final page = state.commissionLogs.length ~/ pageSize + 1;
+      final result = await _api.fetchCommissionLogs(
+        page: page,
+        pageSize: pageSize,
+      );
+      if (!_isCurrentSession(revision)) return;
+      final items = <int, Ai68CommissionLog>{
+        for (final item in state.commissionLogs) item.id: item,
+        for (final item in result.items) item.id: item,
+      }.values.toList(growable: false);
+      state = state.copyWith(
+        commissionLogs: items,
+        commissionTotal: result.total,
+        isInviting: false,
+      );
+    } catch (error) {
+      if (!_isCurrentSession(revision)) return;
+      if (await _handleAuthenticationFailure(error, revision)) return;
+      state = state.copyWith(
+        isInviting: false,
+        errorMessage: _messageFor(error),
+      );
+    }
+  }
+
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }
@@ -714,6 +858,43 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
   Future<List<Ai68Server>> _loadServers(List<Ai68Server> fallback) async {
     try {
       return await _api.fetchServers();
+    } on Ai68ApiException catch (error) {
+      if (error.isAuthenticationFailure) rethrow;
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  Future<Ai68UserConfig?> _loadUserConfig(Ai68UserConfig? fallback) async {
+    try {
+      return await _api.fetchUserConfig();
+    } on Ai68ApiException catch (error) {
+      if (error.isAuthenticationFailure) rethrow;
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  Future<Ai68InviteOverview?> _loadInviteOverview(
+    Ai68InviteOverview? fallback,
+  ) async {
+    try {
+      return await _api.fetchInviteOverview();
+    } on Ai68ApiException catch (error) {
+      if (error.isAuthenticationFailure) rethrow;
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  Future<Ai68CommissionPage> _loadCommissionPage(
+    Ai68CommissionPage fallback,
+  ) async {
+    try {
+      return await _api.fetchCommissionLogs();
     } on Ai68ApiException catch (error) {
       if (error.isAuthenticationFailure) rethrow;
       return fallback;
@@ -888,6 +1069,8 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       orders: const [],
       notices: const [],
       servers: const [],
+      commissionLogs: const [],
+      commissionTotal: 0,
       selectedRegion: Ai68Region.automatic,
       errorMessage: message,
     );

@@ -24,6 +24,8 @@ abstract interface class Ai68Api {
 
   Future<Ai68User> fetchUserInfo();
 
+  Future<Ai68UserConfig> fetchUserConfig();
+
   Future<Ai68Subscription> fetchSubscription();
 
   Future<List<Ai68Plan>> fetchPlans({bool authenticated = true});
@@ -55,6 +57,22 @@ abstract interface class Ai68Api {
   Future<List<Ai68Server>> fetchServers();
 
   Future<List<Ai68TrafficLog>> fetchTrafficLogs();
+
+  Future<Ai68InviteOverview> fetchInviteOverview();
+
+  Future<void> generateInviteCode();
+
+  Future<Ai68CommissionPage> fetchCommissionLogs({
+    int page = 1,
+    int pageSize = 20,
+  });
+
+  Future<void> transferCommission(int amountCents);
+
+  Future<void> withdrawCommission({
+    required String method,
+    required String account,
+  });
 
   void close({bool force = false});
 }
@@ -137,6 +155,16 @@ final class Ai68ApiClient implements Ai68Api {
       authenticated: true,
     );
     return Ai68User.fromJson(Ai68Json.object(data, 'user'));
+  }
+
+  @override
+  Future<Ai68UserConfig> fetchUserConfig() async {
+    final data = await _standardRequest(
+      'GET',
+      'user/comm/config',
+      authenticated: true,
+    );
+    return Ai68UserConfig.fromJson(Ai68Json.object(data, 'user configuration'));
   }
 
   @override
@@ -308,6 +336,79 @@ final class Ai68ApiClient implements Ai68Api {
               Ai68TrafficLog.fromJson(Ai68Json.object(item, 'traffic log')),
         )
         .toList(growable: false);
+  }
+
+  @override
+  Future<Ai68InviteOverview> fetchInviteOverview() async {
+    final data = await _standardRequest(
+      'GET',
+      'user/invite/fetch',
+      authenticated: true,
+    );
+    return Ai68InviteOverview.fromJson(
+      Ai68Json.object(data, 'invite overview'),
+    );
+  }
+
+  @override
+  Future<void> generateInviteCode() async {
+    await _standardRequest('GET', 'user/invite/save', authenticated: true);
+  }
+
+  @override
+  Future<Ai68CommissionPage> fetchCommissionLogs({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final data = Ai68Json.object(
+      await _rawRequest(
+        'GET',
+        'user/invite/details',
+        authenticated: true,
+        queryParameters: <String, dynamic>{
+          'current': page,
+          'page_size': pageSize,
+        },
+      ),
+      'commission page',
+    );
+    final items = Ai68Json.array(data['data'], 'commission logs')
+        .map(
+          (item) => Ai68CommissionLog.fromJson(
+            Ai68Json.object(item, 'commission log'),
+          ),
+        )
+        .toList(growable: false);
+    return Ai68CommissionPage(
+      items: items,
+      total: Ai68Json.optionalInteger(data['total']) ?? items.length,
+    );
+  }
+
+  @override
+  Future<void> transferCommission(int amountCents) async {
+    await _standardRequest(
+      'POST',
+      'user/transfer',
+      authenticated: true,
+      data: <String, dynamic>{'transfer_amount': amountCents},
+    );
+  }
+
+  @override
+  Future<void> withdrawCommission({
+    required String method,
+    required String account,
+  }) async {
+    await _standardRequest(
+      'POST',
+      'user/ticket/withdraw',
+      authenticated: true,
+      data: <String, dynamic>{
+        'withdraw_method': method,
+        'withdraw_account': account,
+      },
+    );
   }
 
   Future<Object?> _standardRequest(

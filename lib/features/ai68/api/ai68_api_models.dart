@@ -239,6 +239,148 @@ final class Ai68User {
   final String? avatarUrl;
 }
 
+final class Ai68UserConfig {
+  const Ai68UserConfig({
+    required this.withdrawMethods,
+    required this.withdrawClosed,
+    required this.currency,
+    required this.currencySymbol,
+    required this.commissionDistributionEnabled,
+    required this.commissionDistributionRates,
+  });
+
+  factory Ai68UserConfig.fromJson(Map<String, dynamic> json) {
+    return Ai68UserConfig(
+      withdrawMethods: Ai68Json.strings(json['withdraw_methods']),
+      withdrawClosed: Ai68Json.boolean(json['withdraw_close']),
+      currency: Ai68Json.optionalString(json['currency']) ?? 'CNY',
+      currencySymbol: Ai68Json.optionalString(json['currency_symbol']) ?? '¥',
+      commissionDistributionEnabled: Ai68Json.boolean(
+        json['commission_distribution_enable'],
+      ),
+      commissionDistributionRates: <int>[
+        Ai68Json.optionalInteger(json['commission_distribution_l1']) ?? 0,
+        Ai68Json.optionalInteger(json['commission_distribution_l2']) ?? 0,
+        Ai68Json.optionalInteger(json['commission_distribution_l3']) ?? 0,
+      ],
+    );
+  }
+
+  final List<String> withdrawMethods;
+  final bool withdrawClosed;
+  final String currency;
+  final String currencySymbol;
+  final bool commissionDistributionEnabled;
+  final List<int> commissionDistributionRates;
+}
+
+final class Ai68InviteCode {
+  const Ai68InviteCode({
+    required this.code,
+    required this.views,
+    required this.used,
+    this.createdAt,
+  });
+
+  factory Ai68InviteCode.fromJson(Map<String, dynamic> json) {
+    return Ai68InviteCode(
+      code: Ai68Json.string(json['code'], 'invite code'),
+      views: Ai68Json.optionalInteger(json['pv']) ?? 0,
+      used: Ai68Json.boolean(json['status']),
+      createdAt: Ai68Json.optionalInteger(json['created_at']),
+    );
+  }
+
+  final String code;
+  final int views;
+  final bool used;
+  final int? createdAt;
+}
+
+final class Ai68InviteStats {
+  const Ai68InviteStats({
+    required this.registeredUsers,
+    required this.cumulativeCommissionCents,
+    required this.pendingCommissionCents,
+    required this.commissionRate,
+    required this.availableCommissionCents,
+  });
+
+  factory Ai68InviteStats.fromJson(Object? value) {
+    final values = Ai68Json.array(value, 'invite statistics');
+    return Ai68InviteStats(
+      registeredUsers: _valueAt(values, 0),
+      cumulativeCommissionCents: _valueAt(values, 1),
+      pendingCommissionCents: _valueAt(values, 2),
+      commissionRate: _valueAt(values, 3),
+      availableCommissionCents: _valueAt(values, 4),
+    );
+  }
+
+  static int _valueAt(List<dynamic> values, int index) {
+    if (index >= values.length) return 0;
+    return Ai68Json.optionalInteger(values[index]) ?? 0;
+  }
+
+  final int registeredUsers;
+  final int cumulativeCommissionCents;
+  final int pendingCommissionCents;
+  final int commissionRate;
+  final int availableCommissionCents;
+}
+
+final class Ai68InviteOverview {
+  const Ai68InviteOverview({required this.codes, required this.stats});
+
+  factory Ai68InviteOverview.fromJson(Map<String, dynamic> json) {
+    return Ai68InviteOverview(
+      codes: Ai68Json.array(json['codes'], 'invite codes')
+          .map(
+            (item) =>
+                Ai68InviteCode.fromJson(Ai68Json.object(item, 'invite code')),
+          )
+          .toList(growable: false),
+      stats: Ai68InviteStats.fromJson(json['stat']),
+    );
+  }
+
+  final List<Ai68InviteCode> codes;
+  final Ai68InviteStats stats;
+}
+
+final class Ai68CommissionPage {
+  const Ai68CommissionPage({required this.items, required this.total});
+
+  final List<Ai68CommissionLog> items;
+  final int total;
+}
+
+final class Ai68CommissionLog {
+  const Ai68CommissionLog({
+    required this.id,
+    required this.orderAmountCents,
+    required this.tradeNo,
+    required this.amountCents,
+    this.createdAt,
+  });
+
+  factory Ai68CommissionLog.fromJson(Map<String, dynamic> json) {
+    return Ai68CommissionLog(
+      id: Ai68Json.integer(json['id'], 'commission log.id'),
+      orderAmountCents: Ai68Json.optionalInteger(json['order_amount']) ?? 0,
+      tradeNo: Ai68Json.optionalString(json['trade_no']) ?? '',
+      amountCents: Ai68Json.optionalInteger(json['get_amount']) ?? 0,
+      createdAt: Ai68Json.optionalInteger(json['created_at']),
+    );
+  }
+
+  final int id;
+  final int orderAmountCents;
+  final String tradeNo;
+  final int amountCents;
+  final int? createdAt;
+}
+
 enum Ai68PlanPeriod {
   month('month_price'),
   quarter('quarter_price'),

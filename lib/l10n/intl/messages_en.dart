@@ -22,67 +22,69 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m0(domains) => "Allowed email domains: ${domains}";
 
-  static String m1(seconds) => "Resend in ${seconds}s";
+  static String m1(count) => "${count} people";
 
-  static String m2(count) =>
+  static String m2(seconds) => "Resend in ${seconds}s";
+
+  static String m3(count) =>
       "${Intl.plural(count, one: '1 day ago', other: '${count} days ago')}";
 
-  static String m3(label) =>
+  static String m4(label) =>
       "Are you sure you want to delete the selected ${label}?";
 
-  static String m4(label) =>
+  static String m5(label) =>
       "Are you sure you want to delete the current ${label}?";
 
-  static String m5(label) => "${label} details";
+  static String m6(label) => "${label} details";
 
-  static String m6(label) => "${label} cannot be empty";
+  static String m7(label) => "${label} cannot be empty";
 
-  static String m7(count) => "${count} entries";
+  static String m8(count) => "${count} entries";
 
-  static String m8(label) => "Current ${label} already exists";
+  static String m9(label) => "Current ${label} already exists";
 
-  static String m9(name) => "${name} is already up to date";
+  static String m10(name) => "${name} is already up to date";
 
-  static String m10(name) => "${name} updated";
+  static String m11(name) => "${name} updated";
 
-  static String m11(name) => "Updating ${name}...";
+  static String m12(name) => "Updating ${name}...";
 
-  static String m12(count) =>
+  static String m13(count) =>
       "${Intl.plural(count, one: '1 hour ago', other: '${count} hours ago')}";
 
-  static String m13(count) => "${count} hours";
+  static String m14(count) => "${count} hours";
 
-  static String m14(target) => "${target} is an invalid policy";
+  static String m15(target) => "${target} is an invalid policy";
 
-  static String m15(proxyName) => "${proxyName} is an invalid proxy";
+  static String m16(proxyName) => "${proxyName} is an invalid proxy";
 
-  static String m16(providerName) =>
+  static String m17(providerName) =>
       "${providerName} is an invalid proxy provider";
 
-  static String m17(subRule) => "${subRule} is an invalid SUB_RULE";
+  static String m18(subRule) => "${subRule} is an invalid SUB_RULE";
 
-  static String m18(appName) =>
+  static String m19(appName) =>
       "1. Open System Settings > Privacy & Security\n2. Choose Location Services\n3. Find and check ${appName} in the right list\n\nAfter completing the setup, return to the app and use it normally. Thank you for your cooperation.";
 
-  static String m19(count) =>
+  static String m20(count) =>
       "${Intl.plural(count, one: '1 minute ago', other: '${count} minutes ago')}";
 
-  static String m20(count) =>
+  static String m21(count) =>
       "${Intl.plural(count, one: '1 month ago', other: '${count} months ago')}";
 
-  static String m21(label) => "No ${label} yet";
+  static String m22(label) => "No ${label} yet";
 
-  static String m22(label) => "${label} must be a number";
+  static String m23(label) => "${label} must be a number";
 
-  static String m23(label) => "${label} must be between 1024 and 49151";
+  static String m24(label) => "${label} must be between 1024 and 49151";
 
-  static String m24(count) => "${count} seconds";
+  static String m25(count) => "${count} seconds";
 
-  static String m25(count) => "${count} items have been selected";
+  static String m26(count) => "${count} items have been selected";
 
-  static String m26(label) => "${label} must be a url";
+  static String m27(label) => "${label} must be a url";
 
-  static String m27(count) =>
+  static String m28(count) =>
       "${Intl.plural(count, one: '1 year ago', other: '${count} years ago')}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -143,20 +145,39 @@ class MessageLookup extends MessageLookupByLibrary {
       "Select the best node automatically",
     ),
     "ai68Automatic": MessageLookupByLibrary.simpleMessage("Automatic"),
+    "ai68AvailableCommission": MessageLookupByLibrary.simpleMessage(
+      "Current commission remaining",
+    ),
     "ai68BackToLogin": MessageLookupByLibrary.simpleMessage("Back to sign in"),
     "ai68Balance": MessageLookupByLibrary.simpleMessage("Balance"),
     "ai68Buy": MessageLookupByLibrary.simpleMessage("Buy"),
     "ai68CancelOrder": MessageLookupByLibrary.simpleMessage("Cancel order"),
     "ai68Center": MessageLookupByLibrary.simpleMessage("AI68"),
+    "ai68CommissionHistory": MessageLookupByLibrary.simpleMessage(
+      "Commission Income Record",
+    ),
+    "ai68CommissionPaidAt": MessageLookupByLibrary.simpleMessage("Paid at"),
+    "ai68CommissionRate": MessageLookupByLibrary.simpleMessage(
+      "Commission rate",
+    ),
     "ai68Complete": MessageLookupByLibrary.simpleMessage("Ready"),
     "ai68ConfirmPassword": MessageLookupByLibrary.simpleMessage(
       "Confirm password",
     ),
     "ai68Connect": MessageLookupByLibrary.simpleMessage("Connect"),
     "ai68Connecting": MessageLookupByLibrary.simpleMessage("Connecting"),
+    "ai68CopyInviteLink": MessageLookupByLibrary.simpleMessage(
+      "Copy invitation link",
+    ),
+    "ai68CopySuccess": MessageLookupByLibrary.simpleMessage(
+      "Copied successfully",
+    ),
     "ai68CouponCode": MessageLookupByLibrary.simpleMessage("Coupon code"),
     "ai68CreateAccount": MessageLookupByLibrary.simpleMessage(
       "Create AI68 account",
+    ),
+    "ai68CumulativeCommission": MessageLookupByLibrary.simpleMessage(
+      "Cumulative commission earned",
     ),
     "ai68DeviceLimit": MessageLookupByLibrary.simpleMessage("Device limit"),
     "ai68Disconnect": MessageLookupByLibrary.simpleMessage("Disconnect"),
@@ -176,10 +197,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68ExpiryReminder": MessageLookupByLibrary.simpleMessage(
       "Your plan will expire soon",
     ),
+    "ai68GenerateInviteCode": MessageLookupByLibrary.simpleMessage(
+      "Generate invitation code",
+    ),
     "ai68HalfYear": MessageLookupByLibrary.simpleMessage("Half-year"),
     "ai68HongKong": MessageLookupByLibrary.simpleMessage("Hong Kong"),
     "ai68InviteCode": MessageLookupByLibrary.simpleMessage("Invite code"),
+    "ai68InviteCodeCreated": MessageLookupByLibrary.simpleMessage(
+      "Invitation code generated",
+    ),
+    "ai68InviteCodeManagement": MessageLookupByLibrary.simpleMessage(
+      "Invitation Code Management",
+    ),
     "ai68Japan": MessageLookupByLibrary.simpleMessage("Japan"),
+    "ai68LoadMore": MessageLookupByLibrary.simpleMessage("Load more"),
     "ai68LoadRegistrationSettings": MessageLookupByLibrary.simpleMessage(
       "Reload registration settings",
     ),
@@ -188,6 +219,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68LoginAccount": MessageLookupByLibrary.simpleMessage("Sign in to AI68"),
     "ai68Logout": MessageLookupByLibrary.simpleMessage("Sign out"),
     "ai68Monthly": MessageLookupByLibrary.simpleMessage("Monthly"),
+    "ai68MyInvites": MessageLookupByLibrary.simpleMessage("My Invitation"),
+    "ai68NoCommissionRecords": MessageLookupByLibrary.simpleMessage(
+      "No commission records",
+    ),
+    "ai68NoInviteCodes": MessageLookupByLibrary.simpleMessage(
+      "No invitation codes",
+    ),
+    "ai68NoInviteData": MessageLookupByLibrary.simpleMessage(
+      "Invitation data is unavailable",
+    ),
     "ai68NoNotices": MessageLookupByLibrary.simpleMessage("No notices"),
     "ai68NoOrders": MessageLookupByLibrary.simpleMessage("No orders"),
     "ai68NoPlan": MessageLookupByLibrary.simpleMessage("No active plan"),
@@ -213,17 +254,27 @@ class MessageLookup extends MessageLookupByLibrary {
       "Password must contain at least 8 characters",
     ),
     "ai68Pay": MessageLookupByLibrary.simpleMessage("Pay"),
+    "ai68PendingCommission": MessageLookupByLibrary.simpleMessage(
+      "Pending commission",
+    ),
+    "ai68People": m1,
     "ai68Permanent": MessageLookupByLibrary.simpleMessage("Permanent"),
     "ai68Plan": MessageLookupByLibrary.simpleMessage("Plan"),
     "ai68Quarterly": MessageLookupByLibrary.simpleMessage("Quarterly"),
     "ai68Refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "ai68Register": MessageLookupByLibrary.simpleMessage("Register"),
+    "ai68RegisteredUsers": MessageLookupByLibrary.simpleMessage(
+      "Registered users",
+    ),
     "ai68RemainingTraffic": MessageLookupByLibrary.simpleMessage("Remaining"),
-    "ai68ResendCode": m1,
+    "ai68ResendCode": m2,
     "ai68ResetTraffic": MessageLookupByLibrary.simpleMessage("Reset traffic"),
     "ai68Retry": MessageLookupByLibrary.simpleMessage("Retry"),
     "ai68SelectPayment": MessageLookupByLibrary.simpleMessage(
       "Select payment method",
+    ),
+    "ai68SelectWithdrawMethod": MessageLookupByLibrary.simpleMessage(
+      "Select a withdrawal method",
     ),
     "ai68SendCode": MessageLookupByLibrary.simpleMessage("Send code"),
     "ai68SpeedLimit": MessageLookupByLibrary.simpleMessage("Speed limit"),
@@ -233,6 +284,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68TrafficReminder": MessageLookupByLibrary.simpleMessage(
       "Traffic is running low",
     ),
+    "ai68Transfer": MessageLookupByLibrary.simpleMessage("Transfer"),
+    "ai68TransferAmount": MessageLookupByLibrary.simpleMessage(
+      "Transfer amount",
+    ),
+    "ai68TransferAmountInvalid": MessageLookupByLibrary.simpleMessage(
+      "Enter an amount within the available commission",
+    ),
+    "ai68TransferCommissionHint": MessageLookupByLibrary.simpleMessage(
+      "The transferred balance can only be used for AI68 purchases",
+    ),
+    "ai68TransferCommissionTitle": MessageLookupByLibrary.simpleMessage(
+      "Transfer Commission to Account Balance",
+    ),
+    "ai68TransferSuccess": MessageLookupByLibrary.simpleMessage(
+      "Transfer successful",
+    ),
     "ai68UnitedStates": MessageLookupByLibrary.simpleMessage("United States"),
     "ai68UsedTraffic": MessageLookupByLibrary.simpleMessage("Used"),
     "ai68WelcomeSubtitle": MessageLookupByLibrary.simpleMessage(
@@ -240,6 +307,27 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "ai68WelcomeTitle": MessageLookupByLibrary.simpleMessage(
       "Welcome to FlClash Plus",
+    ),
+    "ai68Withdraw": MessageLookupByLibrary.simpleMessage(
+      "Commission withdrawal",
+    ),
+    "ai68WithdrawAccount": MessageLookupByLibrary.simpleMessage(
+      "Withdrawal account",
+    ),
+    "ai68WithdrawAccountHint": MessageLookupByLibrary.simpleMessage(
+      "Enter the withdrawal account",
+    ),
+    "ai68WithdrawCommissionTitle": MessageLookupByLibrary.simpleMessage(
+      "Request withdrawal",
+    ),
+    "ai68WithdrawDetailsRequired": MessageLookupByLibrary.simpleMessage(
+      "Select a method and enter the withdrawal account",
+    ),
+    "ai68WithdrawMethod": MessageLookupByLibrary.simpleMessage(
+      "Withdrawal method",
+    ),
+    "ai68WithdrawSubmitted": MessageLookupByLibrary.simpleMessage(
+      "Withdrawal request submitted",
     ),
     "ai68Yearly": MessageLookupByLibrary.simpleMessage("Yearly"),
     "allowBypass": MessageLookupByLibrary.simpleMessage(
@@ -408,7 +496,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dataCollectionTip": MessageLookupByLibrary.simpleMessage(
       "Data Collection Notice",
     ),
-    "daysAgo": m2,
+    "daysAgo": m3,
     "defaultNameserver": MessageLookupByLibrary.simpleMessage(
       "Default nameserver",
     ),
@@ -419,8 +507,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "delay": MessageLookupByLibrary.simpleMessage("Delay"),
     "delayTest": MessageLookupByLibrary.simpleMessage("Delay Test"),
     "delete": MessageLookupByLibrary.simpleMessage("Delete"),
-    "deleteMultipTip": m3,
-    "deleteTip": m4,
+    "deleteMultipTip": m4,
+    "deleteTip": m5,
     "desc": MessageLookupByLibrary.simpleMessage(
       "A multi-platform proxy client based on ClashMeta, simple and easy to use, open-source and ad-free.",
     ),
@@ -431,7 +519,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "destinationIPASN": MessageLookupByLibrary.simpleMessage(
       "Destination IPASN",
     ),
-    "details": m5,
+    "details": m6,
     "detectionTip": MessageLookupByLibrary.simpleMessage(
       "Relying on third-party api is for reference only",
     ),
@@ -467,10 +555,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "editProxyGroup": MessageLookupByLibrary.simpleMessage("Edit proxy group"),
     "editRule": MessageLookupByLibrary.simpleMessage("Edit rule"),
     "editSsid": MessageLookupByLibrary.simpleMessage("Edit SSID"),
-    "emptyTip": m6,
+    "emptyTip": m7,
     "en": MessageLookupByLibrary.simpleMessage("English"),
     "entries": MessageLookupByLibrary.simpleMessage(" entries"),
-    "entriesCount": m7,
+    "entriesCount": m8,
     "exclude": MessageLookupByLibrary.simpleMessage("Hidden from recent tasks"),
     "excludeDesc": MessageLookupByLibrary.simpleMessage(
       "When the app is in the background, the app is hidden from the recent task",
@@ -483,7 +571,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "When connected to an excluded SSID Wi-Fi, the app running state will be automatically switched.",
     ),
     "excludeType": MessageLookupByLibrary.simpleMessage("Exclude type"),
-    "existsTip": m8,
+    "existsTip": m9,
     "exit": MessageLookupByLibrary.simpleMessage("Exit"),
     "expand": MessageLookupByLibrary.simpleMessage("Standard"),
     "expectedStatus": MessageLookupByLibrary.simpleMessage("Expected status"),
@@ -531,9 +619,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "geoOptions": MessageLookupByLibrary.simpleMessage("Geo Options"),
     "geoResources": MessageLookupByLibrary.simpleMessage("Geo Resources"),
-    "geoSkipped": m9,
-    "geoUpdated": m10,
-    "geoUpdating": m11,
+    "geoSkipped": m10,
+    "geoUpdated": m11,
+    "geoUpdating": m12,
     "geodataLoader": MessageLookupByLibrary.simpleMessage(
       "Geo Low Memory Mode",
     ),
@@ -564,8 +652,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Use keyboard to control applications",
     ),
     "hours": MessageLookupByLibrary.simpleMessage("hours"),
-    "hoursAgo": m12,
-    "hoursCount": m13,
+    "hoursAgo": m13,
+    "hoursCount": m14,
     "icon": MessageLookupByLibrary.simpleMessage("Icon"),
     "iconRecords": MessageLookupByLibrary.simpleMessage("Icon records"),
     "iconStyle": MessageLookupByLibrary.simpleMessage("Icon style"),
@@ -609,10 +697,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "invalidBackupFile": MessageLookupByLibrary.simpleMessage(
       "Invalid backup file",
     ),
-    "invalidPolicy": m14,
-    "invalidProxy": m15,
-    "invalidProxyProvider": m16,
-    "invalidSubRule": m17,
+    "invalidPolicy": m15,
+    "invalidProxy": m16,
+    "invalidProxyProvider": m17,
+    "invalidSubRule": m18,
     "ipcidr": MessageLookupByLibrary.simpleMessage("Ipcidr"),
     "ipv6Desc": MessageLookupByLibrary.simpleMessage(
       "When turned on it will be able to receive IPv6 traffic",
@@ -646,7 +734,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "locationPermissionDesc": MessageLookupByLibrary.simpleMessage(
       "According to system requirements, obtaining the Wi-Fi name requires you to grant location permission.",
     ),
-    "locationPermissionGuide": m18,
+    "locationPermissionGuide": m19,
     "locationPermissionRequired": MessageLookupByLibrary.simpleMessage(
       "Location Permission Required",
     ),
@@ -676,11 +764,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "minimizeOnExitDesc": MessageLookupByLibrary.simpleMessage(
       "Modify the default system exit event",
     ),
-    "minutesAgo": m19,
+    "minutesAgo": m20,
     "mixedPort": MessageLookupByLibrary.simpleMessage("Mixed Port"),
     "mode": MessageLookupByLibrary.simpleMessage("Mode"),
     "monochromeScheme": MessageLookupByLibrary.simpleMessage("Monochrome"),
-    "monthsAgo": m20,
+    "monthsAgo": m21,
     "more": MessageLookupByLibrary.simpleMessage("More"),
     "name": MessageLookupByLibrary.simpleMessage("Name"),
     "nameserver": MessageLookupByLibrary.simpleMessage("Nameserver"),
@@ -726,8 +814,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "nullProfileDesc": MessageLookupByLibrary.simpleMessage(
       "No profile, Please add a profile",
     ),
-    "nullTip": m21,
-    "numberTip": m22,
+    "nullTip": m22,
+    "numberTip": m23,
     "onDemand": MessageLookupByLibrary.simpleMessage("On Demand"),
     "onDemandDesc": MessageLookupByLibrary.simpleMessage(
       "Configure the program running state for specific scenarios",
@@ -776,7 +864,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portConflictTip": MessageLookupByLibrary.simpleMessage(
       "Please enter a different port",
     ),
-    "portTip": m23,
+    "portTip": m24,
     "preferH3Desc": MessageLookupByLibrary.simpleMessage(
       "Prioritize the use of DOH\'s http/3",
     ),
@@ -1033,7 +1121,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "search": MessageLookupByLibrary.simpleMessage("Search"),
     "seconds": MessageLookupByLibrary.simpleMessage("Seconds"),
-    "secondsCount": m24,
+    "secondsCount": m25,
     "selectAll": MessageLookupByLibrary.simpleMessage("Select all"),
     "selectProxies": MessageLookupByLibrary.simpleMessage("Select proxies"),
     "selectProxyProviders": MessageLookupByLibrary.simpleMessage(
@@ -1049,7 +1137,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Please select sub rule",
     ),
     "selected": MessageLookupByLibrary.simpleMessage("Selected"),
-    "selectedCountTitle": m25,
+    "selectedCountTitle": m26,
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "show": MessageLookupByLibrary.simpleMessage("Show"),
     "shrink": MessageLookupByLibrary.simpleMessage("Shrink"),
@@ -1149,7 +1237,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlDesc": MessageLookupByLibrary.simpleMessage(
       "Obtain profile through URL",
     ),
-    "urlTip": m26,
+    "urlTip": m27,
     "useHosts": MessageLookupByLibrary.simpleMessage("Use hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use system hosts"),
     "userAgent": MessageLookupByLibrary.simpleMessage("User-Agent"),
@@ -1169,7 +1257,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "WebDAV configuration",
     ),
     "whitelistMode": MessageLookupByLibrary.simpleMessage("Whitelist mode"),
-    "yearsAgo": m27,
+    "yearsAgo": m28,
     "zh_CN": MessageLookupByLibrary.simpleMessage("Simplified Chinese"),
   };
 }

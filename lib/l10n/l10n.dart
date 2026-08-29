@@ -5083,6 +5083,316 @@ class AppLocalizations {
       args: [],
     );
   }
+
+  /// `My Invitation`
+  String get ai68MyInvites {
+    return Intl.message(
+      'My Invitation',
+      name: 'ai68MyInvites',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invitation data is unavailable`
+  String get ai68NoInviteData {
+    return Intl.message(
+      'Invitation data is unavailable',
+      name: 'ai68NoInviteData',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current commission remaining`
+  String get ai68AvailableCommission {
+    return Intl.message(
+      'Current commission remaining',
+      name: 'ai68AvailableCommission',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Registered users`
+  String get ai68RegisteredUsers {
+    return Intl.message(
+      'Registered users',
+      name: 'ai68RegisteredUsers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} people`
+  String ai68People(Object count) {
+    return Intl.message(
+      '$count people',
+      name: 'ai68People',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Commission rate`
+  String get ai68CommissionRate {
+    return Intl.message(
+      'Commission rate',
+      name: 'ai68CommissionRate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pending commission`
+  String get ai68PendingCommission {
+    return Intl.message(
+      'Pending commission',
+      name: 'ai68PendingCommission',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cumulative commission earned`
+  String get ai68CumulativeCommission {
+    return Intl.message(
+      'Cumulative commission earned',
+      name: 'ai68CumulativeCommission',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invitation Code Management`
+  String get ai68InviteCodeManagement {
+    return Intl.message(
+      'Invitation Code Management',
+      name: 'ai68InviteCodeManagement',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Generate invitation code`
+  String get ai68GenerateInviteCode {
+    return Intl.message(
+      'Generate invitation code',
+      name: 'ai68GenerateInviteCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy invitation link`
+  String get ai68CopyInviteLink {
+    return Intl.message(
+      'Copy invitation link',
+      name: 'ai68CopyInviteLink',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invitation code generated`
+  String get ai68InviteCodeCreated {
+    return Intl.message(
+      'Invitation code generated',
+      name: 'ai68InviteCodeCreated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copied successfully`
+  String get ai68CopySuccess {
+    return Intl.message(
+      'Copied successfully',
+      name: 'ai68CopySuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No invitation codes`
+  String get ai68NoInviteCodes {
+    return Intl.message(
+      'No invitation codes',
+      name: 'ai68NoInviteCodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Commission Income Record`
+  String get ai68CommissionHistory {
+    return Intl.message(
+      'Commission Income Record',
+      name: 'ai68CommissionHistory',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paid at`
+  String get ai68CommissionPaidAt {
+    return Intl.message(
+      'Paid at',
+      name: 'ai68CommissionPaidAt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No commission records`
+  String get ai68NoCommissionRecords {
+    return Intl.message(
+      'No commission records',
+      name: 'ai68NoCommissionRecords',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Transfer`
+  String get ai68Transfer {
+    return Intl.message('Transfer', name: 'ai68Transfer', desc: '', args: []);
+  }
+
+  /// `Transfer Commission to Account Balance`
+  String get ai68TransferCommissionTitle {
+    return Intl.message(
+      'Transfer Commission to Account Balance',
+      name: 'ai68TransferCommissionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The transferred balance can only be used for AI68 purchases`
+  String get ai68TransferCommissionHint {
+    return Intl.message(
+      'The transferred balance can only be used for AI68 purchases',
+      name: 'ai68TransferCommissionHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Transfer amount`
+  String get ai68TransferAmount {
+    return Intl.message(
+      'Transfer amount',
+      name: 'ai68TransferAmount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter an amount within the available commission`
+  String get ai68TransferAmountInvalid {
+    return Intl.message(
+      'Enter an amount within the available commission',
+      name: 'ai68TransferAmountInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Transfer successful`
+  String get ai68TransferSuccess {
+    return Intl.message(
+      'Transfer successful',
+      name: 'ai68TransferSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Commission withdrawal`
+  String get ai68Withdraw {
+    return Intl.message(
+      'Commission withdrawal',
+      name: 'ai68Withdraw',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Request withdrawal`
+  String get ai68WithdrawCommissionTitle {
+    return Intl.message(
+      'Request withdrawal',
+      name: 'ai68WithdrawCommissionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Withdrawal method`
+  String get ai68WithdrawMethod {
+    return Intl.message(
+      'Withdrawal method',
+      name: 'ai68WithdrawMethod',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select a withdrawal method`
+  String get ai68SelectWithdrawMethod {
+    return Intl.message(
+      'Select a withdrawal method',
+      name: 'ai68SelectWithdrawMethod',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Withdrawal account`
+  String get ai68WithdrawAccount {
+    return Intl.message(
+      'Withdrawal account',
+      name: 'ai68WithdrawAccount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter the withdrawal account`
+  String get ai68WithdrawAccountHint {
+    return Intl.message(
+      'Enter the withdrawal account',
+      name: 'ai68WithdrawAccountHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select a method and enter the withdrawal account`
+  String get ai68WithdrawDetailsRequired {
+    return Intl.message(
+      'Select a method and enter the withdrawal account',
+      name: 'ai68WithdrawDetailsRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Withdrawal request submitted`
+  String get ai68WithdrawSubmitted {
+    return Intl.message(
+      'Withdrawal request submitted',
+      name: 'ai68WithdrawSubmitted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Load more`
+  String get ai68LoadMore {
+    return Intl.message('Load more', name: 'ai68LoadMore', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -386,6 +386,100 @@ void main() {
     expect(subscription.usedBytes, 1500);
     expect(subscription.remainingBytes, 0);
   });
+
+  test('supports XBoard invitation and commission endpoints', () async {
+    tokenStore.session = const Ai68Session(
+      apiAuthorization: 'Bearer api-secret',
+      subscriptionToken: 'subscription-secret',
+      isAdmin: false,
+    );
+    adapter
+      ..enqueue(<String, dynamic>{
+        'status': 'success',
+        'message': 'ok',
+        'data': <String, dynamic>{
+          'withdraw_methods': <String>['Alipay'],
+          'withdraw_close': 0,
+          'currency': 'CNY',
+          'currency_symbol': '¥',
+          'commission_distribution_enable': 1,
+          'commission_distribution_l1': 50,
+          'commission_distribution_l2': 30,
+          'commission_distribution_l3': 20,
+        },
+        'error': null,
+      })
+      ..enqueue(<String, dynamic>{
+        'status': 'success',
+        'message': 'ok',
+        'data': <String, dynamic>{
+          'codes': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'code': 'INVITE68',
+              'pv': 3,
+              'status': 0,
+              'created_at': 1787961600,
+            },
+          ],
+          'stat': <int>[4, 1200, 300, 10, 900],
+        },
+        'error': null,
+      })
+      ..enqueue(<String, dynamic>{
+        'data': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 7,
+            'order_amount': 5000,
+            'trade_no': 'T2026082901',
+            'get_amount': 500,
+            'created_at': 1787961600,
+          },
+        ],
+        'total': 1,
+      })
+      ..enqueue(<String, dynamic>{
+        'status': 'success',
+        'message': 'ok',
+        'data': true,
+        'error': null,
+      })
+      ..enqueue(<String, dynamic>{
+        'status': 'success',
+        'message': 'ok',
+        'data': true,
+        'error': null,
+      })
+      ..enqueue(<String, dynamic>{
+        'status': 'success',
+        'message': 'ok',
+        'data': true,
+        'error': null,
+      });
+
+    final config = await api.fetchUserConfig();
+    final overview = await api.fetchInviteOverview();
+    final details = await api.fetchCommissionLogs(page: 2, pageSize: 20);
+    await api.generateInviteCode();
+    await api.transferCommission(250);
+    await api.withdrawCommission(method: 'Alipay', account: 'user@example.com');
+
+    expect(config.withdrawMethods, <String>['Alipay']);
+    expect(config.commissionDistributionRates, <int>[50, 30, 20]);
+    expect(overview.codes.single.code, 'INVITE68');
+    expect(overview.stats.registeredUsers, 4);
+    expect(overview.stats.availableCommissionCents, 900);
+    expect(details.items.single.amountCents, 500);
+    expect(details.total, 1);
+    expect(adapter.requests[2].queryParameters, <String, dynamic>{
+      'current': 2,
+      'page_size': 20,
+    });
+    expect(adapter.requests[4].data, <String, dynamic>{'transfer_amount': 250});
+    expect(adapter.requests[5].data, <String, dynamic>{
+      'withdraw_method': 'Alipay',
+      'withdraw_account': 'user@example.com',
+    });
+  });
 }
 
 final class QueueHttpClientAdapter implements HttpClientAdapter {
