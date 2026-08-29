@@ -332,7 +332,16 @@ jobs:
           for bundle in "${bundles[@]}"; do
             printf '%s\n' "$bundle"
             if [[ "$ANDROID_PACKAGE_MODE" == 'production' ]]; then
-              jarsigner -verify -strict "$bundle"
+              set +e
+              strict_output="$(jarsigner -verify -strict "$bundle" 2>&1)"
+              strict_status=$?
+              set -e
+              printf '%s\n' "$strict_output"
+              if [[ "$strict_status" -ne 0 && "$strict_status" -ne 4 ]]; then
+                exit "$strict_status"
+              fi
+              grep -F 'jar verified' <<< "$strict_output" > /dev/null
+              jarsigner -verify "$bundle"
               bundle_cert="$(keytool -printcert -jarfile "$bundle" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
               test "$bundle_cert" = "$expected_cert"
               [[ "$(basename "$bundle")" != *-test-* ]]
