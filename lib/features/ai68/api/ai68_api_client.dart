@@ -24,6 +24,11 @@ abstract interface class Ai68Api {
 
   Future<Ai68User> fetchUserInfo();
 
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  });
+
   Future<Ai68UserConfig> fetchUserConfig();
 
   Future<Ai68Subscription> fetchSubscription();
@@ -155,6 +160,22 @@ final class Ai68ApiClient implements Ai68Api {
       authenticated: true,
     );
     return Ai68User.fromJson(Ai68Json.object(data, 'user'));
+  }
+
+  @override
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    await _standardRequest(
+      'POST',
+      'user/changePassword',
+      authenticated: true,
+      data: <String, dynamic>{
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      },
+    );
   }
 
   @override

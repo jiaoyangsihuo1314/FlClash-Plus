@@ -157,6 +157,34 @@ void main() {
     },
   );
 
+  test('changes password with XBoard credential fields', () async {
+    tokenStore.session = const Ai68Session(
+      apiAuthorization: 'Bearer api-secret',
+      subscriptionToken: 'subscription-secret',
+      isAdmin: false,
+    );
+    adapter.enqueue(<String, dynamic>{
+      'status': 'success',
+      'message': 'ok',
+      'data': true,
+      'error': null,
+    });
+
+    await api.changePassword(
+      oldPassword: 'password123',
+      newPassword: 'new-password123',
+    );
+
+    final request = adapter.requests.single;
+    expect(request.path, 'user/changePassword');
+    expect(request.method, 'POST');
+    expect(request.headers[ai68AuthorizationHeader], 'Bearer api-secret');
+    expect(request.data, <String, dynamic>{
+      'old_password': 'password123',
+      'new_password': 'new-password123',
+    });
+  });
+
   test('protected requests fail before transport when session is absent', () {
     expect(
       api.fetchUserInfo,

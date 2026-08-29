@@ -116,6 +116,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "advancedConfigDesc": MessageLookupByLibrary.simpleMessage("多様な設定を提供"),
     "agree": MessageLookupByLibrary.simpleMessage("同意"),
     "ai68Account": MessageLookupByLibrary.simpleMessage("アカウント"),
+    "ai68AccountBalanceOnly": MessageLookupByLibrary.simpleMessage(
+      "アカウント残高（購入専用）",
+    ),
     "ai68AutoDetectNetwork": MessageLookupByLibrary.simpleMessage(
       "ネットワークを自動検出",
     ),
@@ -127,10 +130,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Buy": MessageLookupByLibrary.simpleMessage("購入"),
     "ai68CancelOrder": MessageLookupByLibrary.simpleMessage("注文をキャンセル"),
     "ai68Center": MessageLookupByLibrary.simpleMessage("AI68"),
+    "ai68ChangePassword": MessageLookupByLibrary.simpleMessage("パスワードを変更"),
     "ai68CommissionHistory": MessageLookupByLibrary.simpleMessage("コミッション支払履歴"),
     "ai68CommissionPaidAt": MessageLookupByLibrary.simpleMessage("支払日時"),
     "ai68CommissionRate": MessageLookupByLibrary.simpleMessage("コミッションレート"),
     "ai68Complete": MessageLookupByLibrary.simpleMessage("完了"),
+    "ai68ConfirmNewPassword": MessageLookupByLibrary.simpleMessage(
+      "新しいパスワードを再入力",
+    ),
     "ai68ConfirmPassword": MessageLookupByLibrary.simpleMessage("パスワードを再入力"),
     "ai68Connect": MessageLookupByLibrary.simpleMessage("接続"),
     "ai68Connecting": MessageLookupByLibrary.simpleMessage("接続中"),
@@ -174,8 +181,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Login": MessageLookupByLibrary.simpleMessage("ログイン"),
     "ai68LoginAccount": MessageLookupByLibrary.simpleMessage("AI68にログイン"),
     "ai68Logout": MessageLookupByLibrary.simpleMessage("ログアウト"),
+    "ai68Me": MessageLookupByLibrary.simpleMessage("マイページ"),
     "ai68Monthly": MessageLookupByLibrary.simpleMessage("月額"),
     "ai68MyInvites": MessageLookupByLibrary.simpleMessage("招待リスト"),
+    "ai68MyWallet": MessageLookupByLibrary.simpleMessage("マイウォレット"),
+    "ai68NewPassword": MessageLookupByLibrary.simpleMessage("新しいパスワード"),
     "ai68NoCommissionRecords": MessageLookupByLibrary.simpleMessage(
       "コミッション履歴はありません",
     ),
@@ -187,6 +197,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Nodes": MessageLookupByLibrary.simpleMessage("ノード"),
     "ai68Notices": MessageLookupByLibrary.simpleMessage("お知らせ"),
     "ai68Offline": MessageLookupByLibrary.simpleMessage("オフライン"),
+    "ai68OldPassword": MessageLookupByLibrary.simpleMessage("現在のパスワード"),
     "ai68OneTime": MessageLookupByLibrary.simpleMessage("買い切り"),
     "ai68Online": MessageLookupByLibrary.simpleMessage("オンライン"),
     "ai68OpenManualMode": MessageLookupByLibrary.simpleMessage(
@@ -199,6 +210,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68OrderPending": MessageLookupByLibrary.simpleMessage("支払い待ち"),
     "ai68Orders": MessageLookupByLibrary.simpleMessage("注文"),
     "ai68Password": MessageLookupByLibrary.simpleMessage("パスワード"),
+    "ai68PasswordChanged": MessageLookupByLibrary.simpleMessage("パスワードを変更しました"),
     "ai68PasswordMismatch": MessageLookupByLibrary.simpleMessage(
       "パスワードが一致しません",
     ),
@@ -220,6 +232,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68ResendCode": m2,
     "ai68ResetTraffic": MessageLookupByLibrary.simpleMessage("通信量をリセット"),
     "ai68Retry": MessageLookupByLibrary.simpleMessage("再試行"),
+    "ai68Save": MessageLookupByLibrary.simpleMessage("保存"),
     "ai68SelectPayment": MessageLookupByLibrary.simpleMessage("支払い方法を選択"),
     "ai68SelectWithdrawMethod": MessageLookupByLibrary.simpleMessage(
       "出金方法を選択してください",

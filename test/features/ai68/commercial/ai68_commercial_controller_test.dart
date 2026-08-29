@@ -311,6 +311,54 @@ void main() {
     verify(api.generateInviteCode).called(1);
     verify(() => api.transferCommission(200)).called(1);
   });
+
+  test('changes password while preserving the active session', () async {
+    when(
+      () => api.changePassword(
+        oldPassword: 'password123',
+        newPassword: 'new-password123',
+      ),
+    ).thenAnswer((_) async {});
+
+    final changed = await controller.changePassword(
+      oldPassword: 'password123',
+      newPassword: 'new-password123',
+    );
+
+    final state = container.read(ai68CommercialProvider);
+    expect(changed, isTrue);
+    expect(state.isAuthenticated, isTrue);
+    expect(state.isChangingPassword, isFalse);
+    expect(state.errorMessage, isNull);
+    expect(tokenStore.session, session);
+    verify(
+      () => api.changePassword(
+        oldPassword: 'password123',
+        newPassword: 'new-password123',
+      ),
+    ).called(1);
+  });
+
+  test('reports password change failures without ending the session', () async {
+    when(
+      () => api.changePassword(
+        oldPassword: 'wrong-password',
+        newPassword: 'new-password123',
+      ),
+    ).thenThrow(const Ai68ApiException(message: 'Old password is wrong'));
+
+    final changed = await controller.changePassword(
+      oldPassword: 'wrong-password',
+      newPassword: 'new-password123',
+    );
+
+    final state = container.read(ai68CommercialProvider);
+    expect(changed, isFalse);
+    expect(state.isAuthenticated, isTrue);
+    expect(state.isChangingPassword, isFalse);
+    expect(state.errorMessage, 'Old password is wrong');
+    expect(tokenStore.session, session);
+  });
 }
 
 final class _MockAi68Api extends Mock implements Ai68Api {}

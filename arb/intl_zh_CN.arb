@@ -660,5 +660,14 @@
   "ai68WithdrawAccountHint": "请输入提现账号",
   "ai68WithdrawDetailsRequired": "请选择提现方式并填写提现账号",
   "ai68WithdrawSubmitted": "提现申请已提交",
-  "ai68LoadMore": "加载更多"
+  "ai68LoadMore": "加载更多",
+  "ai68Me": "我的",
+  "ai68MyWallet": "我的钱包",
+  "ai68AccountBalanceOnly": "账户余额（仅消费）",
+  "ai68ChangePassword": "修改密码",
+  "ai68OldPassword": "旧密码",
+  "ai68NewPassword": "新密码",
+  "ai68ConfirmNewPassword": "确认新密码",
+  "ai68Save": "保存",
+  "ai68PasswordChanged": "密码修改成功"
 }

@@ -34,7 +34,7 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
     }
     final l10n = context.appLocalizations;
     return DefaultTabController(
-      length: 6,
+      length: 7,
       child: CommonScaffold(
         title: l10n.ai68Center,
         isLoading: state.isRefreshing,
@@ -80,6 +80,10 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
                   icon: const Icon(Icons.notifications),
                   text: l10n.ai68Notices,
                 ),
+                Tab(
+                  icon: const Icon(Icons.account_circle_outlined),
+                  text: l10n.ai68Me,
+                ),
               ],
             ),
             Expanded(
@@ -97,6 +101,7 @@ class _Ai68CenterViewState extends ConsumerState<Ai68CenterView> {
                     },
                   ),
                   _Ai68NoticesTab(state: state),
+                  _Ai68MeTab(state: state),
                 ],
               ),
             ),
@@ -405,6 +410,278 @@ class _Ai68AccountTab extends StatelessWidget {
                   '${_formatBytes(state.remainingBytes)} / ${_formatBytes(subscription?.transferEnableBytes ?? 0)}',
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Ai68MeTab extends ConsumerStatefulWidget {
+  const _Ai68MeTab({required this.state});
+
+  final Ai68CommercialState state;
+
+  @override
+  ConsumerState<_Ai68MeTab> createState() => _Ai68MeTabState();
+}
+
+class _Ai68MeTabState extends ConsumerState<_Ai68MeTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _oldPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscureOldPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void dispose() {
+    _oldPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() != true) return;
+    FocusScope.of(context).unfocus();
+    final controller = ref.read(ai68CommercialProvider.notifier);
+    final changed = await controller.changePassword(
+      oldPassword: _oldPasswordController.text,
+      newPassword: _newPasswordController.text,
+    );
+    if (!mounted) return;
+    if (changed) {
+      _oldPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+      context.showSnackBar(context.appLocalizations.ai68PasswordChanged);
+      return;
+    }
+    final message = ref.read(ai68CommercialProvider).errorMessage;
+    if (message != null) context.showSnackBar(message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.appLocalizations;
+    final state = widget.state;
+    final currency = state.userConfig?.currency ?? 'CNY';
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CommonCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: context.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.ai68MyWallet,
+                                style: context.textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.end,
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  Text(
+                                    _formatMoney(
+                                      context,
+                                      state.user?.balanceCents ?? 0,
+                                      symbol:
+                                          state.userConfig?.currencySymbol ??
+                                          '¥',
+                                    ),
+                                    style: context.textTheme.headlineSmall,
+                                  ),
+                                  Text(
+                                    currency,
+                                    style: context.textTheme.labelLarge
+                                        ?.copyWith(
+                                          color: context
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.ai68AccountBalanceOnly,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CommonCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: AutofillGroup(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              l10n.ai68ChangePassword,
+                              style: context.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 18),
+                            TextFormField(
+                              controller: _oldPasswordController,
+                              autofillHints: const [AutofillHints.password],
+                              inputFormatters: TextInputLimits.limit(32),
+                              obscureText: _obscureOldPassword,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: l10n.ai68OldPassword,
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureOldPassword =
+                                          !_obscureOldPassword;
+                                    });
+                                  },
+                                  tooltip: l10n.ai68OldPassword,
+                                  icon: Icon(
+                                    _obscureOldPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return l10n.ai68OldPassword;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _newPasswordController,
+                              autofillHints: const [AutofillHints.newPassword],
+                              inputFormatters: TextInputLimits.limit(32),
+                              obscureText: _obscureNewPassword,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: l10n.ai68NewPassword,
+                                prefixIcon: const Icon(Icons.password),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureNewPassword =
+                                          !_obscureNewPassword;
+                                    });
+                                  },
+                                  tooltip: l10n.ai68NewPassword,
+                                  icon: Icon(
+                                    _obscureNewPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.length < 8) {
+                                  return l10n.ai68PasswordRequirement;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              autofillHints: const [AutofillHints.newPassword],
+                              inputFormatters: TextInputLimits.limit(32),
+                              obscureText: _obscureConfirmPassword,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submit(),
+                              decoration: InputDecoration(
+                                labelText: l10n.ai68ConfirmNewPassword,
+                                prefixIcon: const Icon(Icons.password),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
+                                    });
+                                  },
+                                  tooltip: l10n.ai68ConfirmNewPassword,
+                                  icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value != _newPasswordController.text) {
+                                  return l10n.ai68PasswordMismatch;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: FilledButton.icon(
+                                onPressed: state.isChangingPassword
+                                    ? null
+                                    : _submit,
+                                icon: state.isChangingPassword
+                                    ? const SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.save_outlined),
+                                label: Text(l10n.ai68Save),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );

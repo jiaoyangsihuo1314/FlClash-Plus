@@ -12,6 +12,8 @@
 
 基于ClashMeta的多平台代理客户端，简单易用，开源无广告。
 
+📖 [Android、macOS 和 Windows 客户端使用教程](USER_GUIDE_zh_CN.md)
+
 on Desktop:
 <p style="text-align: center;">
     <img alt="desktop" src="snapshots/desktop.gif">

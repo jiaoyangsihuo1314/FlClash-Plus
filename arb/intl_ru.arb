@@ -660,5 +660,14 @@
   "ai68WithdrawAccountHint": "Введите счет для вывода",
   "ai68WithdrawDetailsRequired": "Выберите способ и укажите счет для вывода",
   "ai68WithdrawSubmitted": "Запрос на вывод отправлен",
-  "ai68LoadMore": "Загрузить еще"
+  "ai68LoadMore": "Загрузить еще",
+  "ai68Me": "Профиль",
+  "ai68MyWallet": "Мой кошелек",
+  "ai68AccountBalanceOnly": "Баланс аккаунта (только для оплаты)",
+  "ai68ChangePassword": "Изменить пароль",
+  "ai68OldPassword": "Старый пароль",
+  "ai68NewPassword": "Новый пароль",
+  "ai68ConfirmNewPassword": "Подтвердите новый пароль",
+  "ai68Save": "Сохранить",
+  "ai68PasswordChanged": "Пароль успешно изменен"
 }

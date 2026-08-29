@@ -5393,6 +5393,81 @@ class AppLocalizations {
   String get ai68LoadMore {
     return Intl.message('Load more', name: 'ai68LoadMore', desc: '', args: []);
   }
+
+  /// `Me`
+  String get ai68Me {
+    return Intl.message('Me', name: 'ai68Me', desc: '', args: []);
+  }
+
+  /// `My Wallet`
+  String get ai68MyWallet {
+    return Intl.message('My Wallet', name: 'ai68MyWallet', desc: '', args: []);
+  }
+
+  /// `Account balance (for billing only)`
+  String get ai68AccountBalanceOnly {
+    return Intl.message(
+      'Account balance (for billing only)',
+      name: 'ai68AccountBalanceOnly',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change Password`
+  String get ai68ChangePassword {
+    return Intl.message(
+      'Change Password',
+      name: 'ai68ChangePassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Old password`
+  String get ai68OldPassword {
+    return Intl.message(
+      'Old password',
+      name: 'ai68OldPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New password`
+  String get ai68NewPassword {
+    return Intl.message(
+      'New password',
+      name: 'ai68NewPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm new password`
+  String get ai68ConfirmNewPassword {
+    return Intl.message(
+      'Confirm new password',
+      name: 'ai68ConfirmNewPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save`
+  String get ai68Save {
+    return Intl.message('Save', name: 'ai68Save', desc: '', args: []);
+  }
+
+  /// `Password changed successfully`
+  String get ai68PasswordChanged {
+    return Intl.message(
+      'Password changed successfully',
+      name: 'ai68PasswordChanged',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

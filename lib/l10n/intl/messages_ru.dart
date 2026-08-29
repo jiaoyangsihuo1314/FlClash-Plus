@@ -137,6 +137,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "agree": MessageLookupByLibrary.simpleMessage("Согласен"),
     "ai68Account": MessageLookupByLibrary.simpleMessage("Аккаунт"),
+    "ai68AccountBalanceOnly": MessageLookupByLibrary.simpleMessage(
+      "Баланс аккаунта (только для оплаты)",
+    ),
     "ai68AutoDetectNetwork": MessageLookupByLibrary.simpleMessage(
       "Автоматическая проверка сети",
     ),
@@ -154,6 +157,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Buy": MessageLookupByLibrary.simpleMessage("Купить"),
     "ai68CancelOrder": MessageLookupByLibrary.simpleMessage("Отменить заказ"),
     "ai68Center": MessageLookupByLibrary.simpleMessage("AI68"),
+    "ai68ChangePassword": MessageLookupByLibrary.simpleMessage(
+      "Изменить пароль",
+    ),
     "ai68CommissionHistory": MessageLookupByLibrary.simpleMessage(
       "История начисления комиссии",
     ),
@@ -164,6 +170,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Ставка комиссии",
     ),
     "ai68Complete": MessageLookupByLibrary.simpleMessage("Готово"),
+    "ai68ConfirmNewPassword": MessageLookupByLibrary.simpleMessage(
+      "Подтвердите новый пароль",
+    ),
     "ai68ConfirmPassword": MessageLookupByLibrary.simpleMessage(
       "Повторите пароль",
     ),
@@ -217,8 +226,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Login": MessageLookupByLibrary.simpleMessage("Войти"),
     "ai68LoginAccount": MessageLookupByLibrary.simpleMessage("Войти в AI68"),
     "ai68Logout": MessageLookupByLibrary.simpleMessage("Выйти"),
+    "ai68Me": MessageLookupByLibrary.simpleMessage("Профиль"),
     "ai68Monthly": MessageLookupByLibrary.simpleMessage("Ежемесячно"),
     "ai68MyInvites": MessageLookupByLibrary.simpleMessage("Мои приглашения"),
+    "ai68MyWallet": MessageLookupByLibrary.simpleMessage("Мой кошелек"),
+    "ai68NewPassword": MessageLookupByLibrary.simpleMessage("Новый пароль"),
     "ai68NoCommissionRecords": MessageLookupByLibrary.simpleMessage(
       "Нет начислений комиссии",
     ),
@@ -234,6 +246,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Nodes": MessageLookupByLibrary.simpleMessage("Узлы"),
     "ai68Notices": MessageLookupByLibrary.simpleMessage("Объявления"),
     "ai68Offline": MessageLookupByLibrary.simpleMessage("Не в сети"),
+    "ai68OldPassword": MessageLookupByLibrary.simpleMessage("Старый пароль"),
     "ai68OneTime": MessageLookupByLibrary.simpleMessage("Разово"),
     "ai68Online": MessageLookupByLibrary.simpleMessage("В сети"),
     "ai68OpenManualMode": MessageLookupByLibrary.simpleMessage(
@@ -246,6 +259,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68OrderPending": MessageLookupByLibrary.simpleMessage("Ожидает оплаты"),
     "ai68Orders": MessageLookupByLibrary.simpleMessage("Заказы"),
     "ai68Password": MessageLookupByLibrary.simpleMessage("Пароль"),
+    "ai68PasswordChanged": MessageLookupByLibrary.simpleMessage(
+      "Пароль успешно изменен",
+    ),
     "ai68PasswordMismatch": MessageLookupByLibrary.simpleMessage(
       "Пароли не совпадают",
     ),
@@ -269,6 +285,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68ResendCode": m2,
     "ai68ResetTraffic": MessageLookupByLibrary.simpleMessage("Сбросить трафик"),
     "ai68Retry": MessageLookupByLibrary.simpleMessage("Повторить"),
+    "ai68Save": MessageLookupByLibrary.simpleMessage("Сохранить"),
     "ai68SelectPayment": MessageLookupByLibrary.simpleMessage(
       "Выберите способ оплаты",
     ),

@@ -660,5 +660,14 @@
   "ai68WithdrawAccountHint": "出金先アカウントを入力してください",
   "ai68WithdrawDetailsRequired": "出金方法と出金先を入力してください",
   "ai68WithdrawSubmitted": "出金申請を送信しました",
-  "ai68LoadMore": "さらに読み込む"
+  "ai68LoadMore": "さらに読み込む",
+  "ai68Me": "マイページ",
+  "ai68MyWallet": "マイウォレット",
+  "ai68AccountBalanceOnly": "アカウント残高（購入専用）",
+  "ai68ChangePassword": "パスワードを変更",
+  "ai68OldPassword": "現在のパスワード",
+  "ai68NewPassword": "新しいパスワード",
+  "ai68ConfirmNewPassword": "新しいパスワードを再入力",
+  "ai68Save": "保存",
+  "ai68PasswordChanged": "パスワードを変更しました"
 }

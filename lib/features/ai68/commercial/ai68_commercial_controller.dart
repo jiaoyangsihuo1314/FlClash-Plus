@@ -59,6 +59,7 @@ final class Ai68CommercialState {
     this.isAuthenticating = false,
     this.isOrdering = false,
     this.isInviting = false,
+    this.isChangingPassword = false,
     this.errorMessage,
   });
 
@@ -93,6 +94,7 @@ final class Ai68CommercialState {
   final bool isAuthenticating;
   final bool isOrdering;
   final bool isInviting;
+  final bool isChangingPassword;
   final String? errorMessage;
 
   bool get isAuthenticated {
@@ -124,6 +126,7 @@ final class Ai68CommercialState {
     bool? isAuthenticating,
     bool? isOrdering,
     bool? isInviting,
+    bool? isChangingPassword,
     Object? errorMessage = _unsetAi68Value,
   }) {
     return Ai68CommercialState(
@@ -153,6 +156,7 @@ final class Ai68CommercialState {
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
       isOrdering: isOrdering ?? this.isOrdering,
       isInviting: isInviting ?? this.isInviting,
+      isChangingPassword: isChangingPassword ?? this.isChangingPassword,
       errorMessage: identical(errorMessage, _unsetAi68Value)
           ? this.errorMessage
           : errorMessage as String?,
@@ -706,6 +710,32 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       if (await _handleAuthenticationFailure(error, revision)) return null;
       state = state.copyWith(errorMessage: _messageFor(error));
       return null;
+    }
+  }
+
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final revision = _sessionRevision;
+    if (!_isCurrentSession(revision) || !state.isAuthenticated) return false;
+    state = state.copyWith(isChangingPassword: true, errorMessage: null);
+    try {
+      await _api.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      if (!_isCurrentSession(revision)) return false;
+      state = state.copyWith(isChangingPassword: false);
+      return true;
+    } catch (error) {
+      if (!_isCurrentSession(revision)) return false;
+      if (await _handleAuthenticationFailure(error, revision)) return false;
+      state = state.copyWith(
+        isChangingPassword: false,
+        errorMessage: _messageFor(error),
+      );
+      return false;
     }
   }
 

@@ -138,6 +138,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "agree": MessageLookupByLibrary.simpleMessage("Agree"),
     "ai68Account": MessageLookupByLibrary.simpleMessage("Account"),
+    "ai68AccountBalanceOnly": MessageLookupByLibrary.simpleMessage(
+      "Account balance (for billing only)",
+    ),
     "ai68AutoDetectNetwork": MessageLookupByLibrary.simpleMessage(
       "Detect network automatically",
     ),
@@ -153,6 +156,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Buy": MessageLookupByLibrary.simpleMessage("Buy"),
     "ai68CancelOrder": MessageLookupByLibrary.simpleMessage("Cancel order"),
     "ai68Center": MessageLookupByLibrary.simpleMessage("AI68"),
+    "ai68ChangePassword": MessageLookupByLibrary.simpleMessage(
+      "Change Password",
+    ),
     "ai68CommissionHistory": MessageLookupByLibrary.simpleMessage(
       "Commission Income Record",
     ),
@@ -161,6 +167,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Commission rate",
     ),
     "ai68Complete": MessageLookupByLibrary.simpleMessage("Ready"),
+    "ai68ConfirmNewPassword": MessageLookupByLibrary.simpleMessage(
+      "Confirm new password",
+    ),
     "ai68ConfirmPassword": MessageLookupByLibrary.simpleMessage(
       "Confirm password",
     ),
@@ -218,8 +227,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Login": MessageLookupByLibrary.simpleMessage("Sign in"),
     "ai68LoginAccount": MessageLookupByLibrary.simpleMessage("Sign in to AI68"),
     "ai68Logout": MessageLookupByLibrary.simpleMessage("Sign out"),
+    "ai68Me": MessageLookupByLibrary.simpleMessage("Me"),
     "ai68Monthly": MessageLookupByLibrary.simpleMessage("Monthly"),
     "ai68MyInvites": MessageLookupByLibrary.simpleMessage("My Invitation"),
+    "ai68MyWallet": MessageLookupByLibrary.simpleMessage("My Wallet"),
+    "ai68NewPassword": MessageLookupByLibrary.simpleMessage("New password"),
     "ai68NoCommissionRecords": MessageLookupByLibrary.simpleMessage(
       "No commission records",
     ),
@@ -235,6 +247,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68Nodes": MessageLookupByLibrary.simpleMessage("Nodes"),
     "ai68Notices": MessageLookupByLibrary.simpleMessage("Notices"),
     "ai68Offline": MessageLookupByLibrary.simpleMessage("Offline"),
+    "ai68OldPassword": MessageLookupByLibrary.simpleMessage("Old password"),
     "ai68OneTime": MessageLookupByLibrary.simpleMessage("One-time"),
     "ai68Online": MessageLookupByLibrary.simpleMessage("Online"),
     "ai68OpenManualMode": MessageLookupByLibrary.simpleMessage(
@@ -247,6 +260,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68OrderPending": MessageLookupByLibrary.simpleMessage("Pending payment"),
     "ai68Orders": MessageLookupByLibrary.simpleMessage("Orders"),
     "ai68Password": MessageLookupByLibrary.simpleMessage("Password"),
+    "ai68PasswordChanged": MessageLookupByLibrary.simpleMessage(
+      "Password changed successfully",
+    ),
     "ai68PasswordMismatch": MessageLookupByLibrary.simpleMessage(
       "The passwords do not match",
     ),
@@ -270,6 +286,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ai68ResendCode": m2,
     "ai68ResetTraffic": MessageLookupByLibrary.simpleMessage("Reset traffic"),
     "ai68Retry": MessageLookupByLibrary.simpleMessage("Retry"),
+    "ai68Save": MessageLookupByLibrary.simpleMessage("Save"),
     "ai68SelectPayment": MessageLookupByLibrary.simpleMessage(
       "Select payment method",
     ),

@@ -660,5 +660,14 @@
   "ai68WithdrawAccountHint": "Enter the withdrawal account",
   "ai68WithdrawDetailsRequired": "Select a method and enter the withdrawal account",
   "ai68WithdrawSubmitted": "Withdrawal request submitted",
-  "ai68LoadMore": "Load more"
+  "ai68LoadMore": "Load more",
+  "ai68Me": "Me",
+  "ai68MyWallet": "My Wallet",
+  "ai68AccountBalanceOnly": "Account balance (for billing only)",
+  "ai68ChangePassword": "Change Password",
+  "ai68OldPassword": "Old password",
+  "ai68NewPassword": "New password",
+  "ai68ConfirmNewPassword": "Confirm new password",
+  "ai68Save": "Save",
+  "ai68PasswordChanged": "Password changed successfully"
 }
