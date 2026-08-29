@@ -136,7 +136,7 @@ void main() {
       final state = container.read(ai68CommercialProvider);
       expect(state.phase, Ai68CommercialPhase.signedOut);
       expect(state.user, isNull);
-      expect(state.errorMessage, contains('stop failed'));
+      expect(state.errorMessage, '操作失败，请稍后重试');
       expect(tokenStore.session, isNull);
       expect(tokenStore.clearCount, 1);
       expect(profilesAction.deletedProfileIds, [42]);
@@ -211,7 +211,7 @@ void main() {
     expect(state.phase, Ai68CommercialPhase.signedOut);
     expect(state.user, isNull);
     expect(state.subscription, isNull);
-    expect(state.errorMessage, 'Session expired');
+    expect(state.errorMessage, '登录状态已过期，请重新登录');
     expect(tokenStore.session, isNull);
     expect(tokenStore.clearCount, 1);
   });
@@ -233,7 +233,7 @@ void main() {
 
       expect(
         container.read(ai68CommercialProvider).errorMessage,
-        'Email delivery failed',
+        '邮件发送失败，请稍后重试',
       );
     },
   );
@@ -356,7 +356,7 @@ void main() {
     expect(changed, isFalse);
     expect(state.isAuthenticated, isTrue);
     expect(state.isChangingPassword, isFalse);
-    expect(state.errorMessage, 'Old password is wrong');
+    expect(state.errorMessage, '旧密码错误');
     expect(tokenStore.session, session);
   });
 }

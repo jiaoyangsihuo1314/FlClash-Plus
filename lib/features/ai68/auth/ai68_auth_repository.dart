@@ -50,10 +50,7 @@ final class Ai68AuthRepository {
   Future<Ai68Subscription> refreshSubscription() async {
     final session = await _tokenStore.readSession();
     if (session == null) {
-      throw const Ai68ApiException(
-        message: 'AI68 authentication is required',
-        statusCode: 401,
-      );
+      throw const Ai68ApiException(message: '请先登录 AI68 账号', statusCode: 401);
     }
     final subscription = await _api.fetchSubscription();
     if (subscription.subscriptionToken != session.subscriptionToken) {

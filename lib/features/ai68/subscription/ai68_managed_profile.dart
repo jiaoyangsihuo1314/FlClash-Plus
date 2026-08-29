@@ -162,9 +162,7 @@ final class DioAi68SubscriptionDownloader
           await _cancelBody(response.data);
           final location = response.headers.value('location');
           if (location == null || redirect == 5) {
-            throw const Ai68ApiException(
-              message: 'AI68 subscription redirect is invalid',
-            );
+            throw const Ai68ApiException(message: 'AI68 订阅重定向地址无效');
           }
           currentUri = currentUri.resolve(location);
           continue;
@@ -178,30 +176,25 @@ final class DioAi68SubscriptionDownloader
           rethrow;
         }
         if (body == null) {
-          throw const Ai68ApiException(message: 'AI68 subscription is empty');
+          throw const Ai68ApiException(message: 'AI68 订阅内容为空');
         }
         final bytes = await _readBytes(body.stream);
         if (bytes.isEmpty) {
-          throw const Ai68ApiException(message: 'AI68 subscription is empty');
+          throw const Ai68ApiException(message: 'AI68 订阅内容为空');
         }
         return Ai68DownloadedSubscription(bytes: bytes);
       }
-      throw const Ai68ApiException(
-        message: 'AI68 subscription redirect is invalid',
-      );
+      throw const Ai68ApiException(message: 'AI68 订阅重定向地址无效');
     } on Ai68ApiException {
       rethrow;
     } on DioException catch (error) {
       throw Ai68ApiException(
-        message: 'Unable to download AI68 subscription',
+        message: '无法下载 AI68 订阅',
         statusCode: error.response?.statusCode,
         cause: error,
       );
     } catch (error) {
-      throw Ai68ApiException(
-        message: 'Unable to download AI68 subscription',
-        cause: error,
-      );
+      throw Ai68ApiException(message: '无法下载 AI68 订阅', cause: error);
     }
   }
 
@@ -211,9 +204,7 @@ final class DioAi68SubscriptionDownloader
     await for (final chunk in stream) {
       length += chunk.length;
       if (length > _maximumBytes) {
-        throw const Ai68ApiException(
-          message: 'AI68 subscription exceeds the size limit',
-        );
+        throw const Ai68ApiException(message: 'AI68 订阅超过大小限制');
       }
       builder.add(chunk);
     }
@@ -230,14 +221,10 @@ final class DioAi68SubscriptionDownloader
     if (values.isEmpty ||
         values.any((value) => value == null || value < 0) ||
         values.toSet().length != 1) {
-      throw const Ai68ApiException(
-        message: 'AI68 subscription has an invalid content length',
-      );
+      throw const Ai68ApiException(message: 'AI68 订阅内容长度无效');
     }
     if (values.first! > _maximumBytes) {
-      throw const Ai68ApiException(
-        message: 'AI68 subscription exceeds the size limit',
-      );
+      throw const Ai68ApiException(message: 'AI68 订阅超过大小限制');
     }
   }
 
@@ -252,9 +239,7 @@ final class DioAi68SubscriptionDownloader
         uri.userInfo.isNotEmpty ||
         uri.port != 443 ||
         !_isAllowedHost(uri.host)) {
-      throw const Ai68ApiException(
-        message: 'AI68 returned an untrusted subscription address',
-      );
+      throw const Ai68ApiException(message: 'AI68 返回了不受信任的订阅地址');
     }
   }
 

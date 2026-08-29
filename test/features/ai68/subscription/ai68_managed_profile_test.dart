@@ -86,7 +86,7 @@ void main() {
           isA<Ai68ApiException>().having(
             (error) => error.message,
             'message',
-            'AI68 subscription exceeds the size limit',
+            'AI68 订阅超过大小限制',
           ),
         ),
       );
@@ -115,7 +115,7 @@ void main() {
           isA<Ai68ApiException>().having(
             (error) => error.message,
             'message',
-            'AI68 subscription exceeds the size limit',
+            'AI68 订阅超过大小限制',
           ),
         ),
       );
@@ -183,7 +183,7 @@ void main() {
           isA<Ai68ApiException>().having(
             (error) => error.message,
             'message',
-            'AI68 subscription is empty',
+            'AI68 订阅内容为空',
           ),
         ),
       );
@@ -204,11 +204,7 @@ void main() {
         ),
         throwsA(
           isA<Ai68ApiException>()
-              .having(
-                (error) => error.message,
-                'message',
-                'Unable to download AI68 subscription',
-              )
+              .having((error) => error.message, 'message', '无法下载 AI68 订阅')
               .having((error) => error.statusCode, 'statusCode', 503),
         ),
       );

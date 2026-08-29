@@ -13,9 +13,7 @@ Uri validateAi68PaymentRedirect(
       uri.userInfo.isNotEmpty ||
       uri.port != 443 ||
       !_isAllowedPaymentHost(uri.host, configuredHosts)) {
-    throw const Ai68ApiException(
-      message: 'AI68 returned an unsafe payment address',
-    );
+    throw const Ai68ApiException(message: 'AI68 返回了不安全的支付地址');
   }
   return uri;
 }

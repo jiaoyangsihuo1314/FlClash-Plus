@@ -437,10 +437,13 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     } on Ai68ApiException catch (error) {
       if (!_isCurrentSession(revision)) return;
       if (error.isAuthenticationFailure) {
-        await _signOut(message: error.message);
+        await _signOut(message: error.displayMessage);
         return;
       }
-      state = state.copyWith(isRefreshing: false, errorMessage: error.message);
+      state = state.copyWith(
+        isRefreshing: false,
+        errorMessage: error.displayMessage,
+      );
     } on _Ai68OperationCancelled {
       return;
     } catch (error) {
@@ -491,9 +494,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       if (activeSubscription == null ||
           !_canUseSubscription(activeSubscription)) {
         await _stopProxyBestEffort();
-        throw const Ai68ApiException(
-          message: 'AI68 subscription is expired or has no traffic',
-        );
+        throw const Ai68ApiException(message: 'AI68 套餐已过期或流量已用完');
       }
       if (!_isCurrentOperation(intent, revision)) return;
       state = state.copyWith(
@@ -519,11 +520,11 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     } on Ai68ApiException catch (error) {
       if (error.isAuthenticationFailure && _isCurrentSession(revision)) {
         if (sessionLocked) {
-          await _signOut(message: error.message);
+          await _signOut(message: error.displayMessage);
         } else {
           await _sessionScheduler.run(() async {
             if (_isCurrentSession(revision)) {
-              await _signOut(message: error.message);
+              await _signOut(message: error.displayMessage);
             }
           });
         }
@@ -533,7 +534,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       await _stopProxyBestEffort();
       state = state.copyWith(
         connectionStage: Ai68ConnectionStage.failed,
-        errorMessage: error.message,
+        errorMessage: error.displayMessage,
       );
     } catch (error) {
       if (!_isCurrentOperation(intent, revision)) return;
@@ -608,9 +609,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
         return result;
       }
       if (result.type != 1) {
-        throw const Ai68ApiException(
-          message: 'AI68 returned an unsupported payment response',
-        );
+        throw const Ai68ApiException(message: 'AI68 返回了不支持的支付结果');
       }
       final redirectUrl = validateAi68PaymentRedirect(result.redirectUrl);
       final confirmed = await globalState.showMessage(
@@ -628,9 +627,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched) {
-        throw const Ai68ApiException(
-          message: 'Unable to open the AI68 payment page',
-        );
+        throw const Ai68ApiException(message: '无法打开 AI68 支付页面');
       }
       state = state.copyWith(isOrdering: false);
       unawaited(pollOrder(tradeNo));
@@ -965,9 +962,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
   Future<void> _selectProxy(Ai68Region region) async {
     final groups = ref.read(groupsProvider);
     if (groups.isEmpty) {
-      throw const Ai68ApiException(
-        message: 'AI68 did not provide any available proxy groups',
-      );
+      throw const Ai68ApiException(message: 'AI68 未提供可用的代理组');
     }
     final strategyGroup = Ai68SmartConnectPolicy.strategyGroup(groups, region);
     final strategy = Ai68SmartConnectPolicy.strategySelection(groups, region);
@@ -979,9 +974,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     }
     final selector = Ai68SmartConnectPolicy.fallbackSelector(groups, region);
     if (selector == null) {
-      throw const Ai68ApiException(
-        message: 'No AI68 nodes match the selected region',
-      );
+      throw const Ai68ApiException(message: '所选地区没有可用的 AI68 节点');
     }
     final groupNames = groups.map((group) => group.name).toSet();
     final regionalSelector =
@@ -997,9 +990,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
               Ai68SmartConnectPolicy.matchesRegion(name, region));
     }).toList();
     if (candidates.isEmpty) {
-      throw const Ai68ApiException(
-        message: 'No AI68 nodes match the selected region',
-      );
+      throw const Ai68ApiException(message: '所选地区没有可用的 AI68 节点');
     }
     final testUrl = ref.read(appSettingProvider).testUrl;
     final delayValues = <String, int>{};
@@ -1024,7 +1015,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
       );
     }
     if (delayValues.isEmpty) {
-      throw const Ai68ApiException(message: 'No reachable AI68 node was found');
+      throw const Ai68ApiException(message: '未找到可连接的 AI68 节点');
     }
     final best = delayValues.entries.reduce(
       (current, next) => next.value < current.value ? next : current,
@@ -1082,7 +1073,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     state = state.copyWith(
       isRefreshing: false,
       connectionStage: Ai68ConnectionStage.failed,
-      errorMessage: 'AI68 subscription is expired or has no traffic',
+      errorMessage: 'AI68 套餐已过期或流量已用完',
     );
   }
 
@@ -1173,7 +1164,7 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
     }
     await _sessionScheduler.run(() async {
       if (_isCurrentSession(revision)) {
-        await _signOut(message: error.message);
+        await _signOut(message: error.displayMessage);
       }
     });
     return true;
@@ -1207,6 +1198,6 @@ final class Ai68CommercialController extends Notifier<Ai68CommercialState> {
   }
 
   String _messageFor(Object error) {
-    return error is Ai68ApiException ? error.message : error.toString();
+    return error is Ai68ApiException ? error.displayMessage : '操作失败，请稍后重试';
   }
 }

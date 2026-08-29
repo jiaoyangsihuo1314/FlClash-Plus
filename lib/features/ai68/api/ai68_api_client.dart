@@ -451,11 +451,11 @@ final class Ai68ApiClient implements Ai68Api {
     );
     if (response['status'] != 'success') {
       throw Ai68ApiException(
-        message: _messageFrom(response, 'AI68 request failed'),
+        message: _messageFrom(response, 'AI68 请求失败，请稍后重试'),
       );
     }
     if (!response.containsKey('data')) {
-      throw const Ai68ApiException(message: 'AI68 response has no data');
+      throw const Ai68ApiException(message: 'AI68 返回的数据不完整');
     }
     return response['data'];
   }
@@ -483,17 +483,11 @@ final class Ai68ApiClient implements Ai68Api {
       if (cause is Ai68ApiException) throw cause;
       final response = error.response;
       throw Ai68ApiException(
-        message: _messageFrom(
-          response?.data,
-          error.message ?? 'Unable to reach AI68',
-        ),
+        message: _messageFrom(response?.data, '无法连接 AI68，请检查网络后重试'),
         statusCode: response?.statusCode,
       );
     } on FormatException catch (error) {
-      throw Ai68ApiException(
-        message: 'AI68 returned an invalid response',
-        cause: error,
-      );
+      throw Ai68ApiException(message: 'AI68 返回的数据格式无效', cause: error);
     }
   }
 
@@ -546,9 +540,7 @@ final class _Ai68AuthorizationInterceptor extends Interceptor {
         DioException(
           requestOptions: options,
           type: DioExceptionType.unknown,
-          error: const Ai68ApiException(
-            message: 'Unable to read AI68 authentication',
-          ),
+          error: const Ai68ApiException(message: '无法读取 AI68 登录信息'),
         ),
       );
       return;
@@ -559,7 +551,7 @@ final class _Ai68AuthorizationInterceptor extends Interceptor {
           requestOptions: options,
           type: DioExceptionType.unknown,
           error: const Ai68ApiException(
-            message: 'AI68 authentication is required',
+            message: '请先登录 AI68 账号',
             statusCode: 401,
           ),
         ),

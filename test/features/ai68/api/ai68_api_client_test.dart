@@ -220,6 +220,11 @@ void main() {
         isA<Ai68ApiException>()
             .having((error) => error.statusCode, 'statusCode', 403)
             .having((error) => error.message, 'message', 'Login expired')
+            .having(
+              (error) => error.displayMessage,
+              'displayMessage',
+              '登录状态已过期，请重新登录',
+            )
             .having((error) => error.cause, 'cause', isNull)
             .having(
               (error) => error.toString(),
